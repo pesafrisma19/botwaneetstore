@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# TypeScript Build Output
+dist/
+
+# WhatsApp Auth Session Credentials (DO NOT COMMIT)
+auth/
+
+# Logs
+logs/
+*.log
+
+# Environment Variables
+.env
+.env.local
