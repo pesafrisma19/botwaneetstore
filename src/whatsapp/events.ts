@@ -1,6 +1,8 @@
 import { WASocket } from '@whiskeysockets/baileys';
+import { handleIncomingMessages } from './message-handler';
 
 export function registerWhatsAppEvents(sock: WASocket): void {
-  // Foundation event listener registration
-  // Message handlers and command dispatchers will be registered here in future phases.
+  sock.ev.on('messages.upsert', (upsert) => {
+    handleIncomingMessages(sock, upsert);
+  });
 }
