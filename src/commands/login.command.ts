@@ -42,6 +42,38 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
 
   const profile = res.data;
 
+  let phone = getPhoneFromJid(ctx.senderJid);
+
+  // Resolve LID → nomor asli dari berbagai sumber metadata pesan (sama seperti daftar)
+  if (!phone && ctx.senderJid.endsWith('@lid')) {
+    const waKey = ctx.rawMessage.key as unknown as {
+      senderPn?: string;
+      participantPn?: string;
+      participantAlt?: string;
+      remoteJidAlt?: string;
+    };
+
+    const pn = waKey.senderPn ?? waKey.participantPn ?? waKey.participantAlt ?? waKey.remoteJidAlt;
+
+    if (pn) {
+      const resolved = normalizePhone(pn);
+      if (resolved) {
+        phone = resolved;
+        saveLidMapping(ctx.senderJid, resolved);
+      }
+    }
+  }
+
+  // Kalau nomor asli tidak ketemu, tolak biar tidak salah identitas
+  if (!phone) {
+    await ctx.sock.sendMessage(
+      ctx.chatId,
+      { text: error('Nomor WhatsApp tidak teridentifikasi. Silakan kirim pesan sekali lagi, lalu coba new!login <API_KEY>.') },
+      { quoted: ctx.rawMessage }
+    );
+    return;
+  }
+
   const saved = setSession(ctx.senderJid, {
     apiKey,
     updated_at: new Date().toISOString(),
@@ -52,8 +84,7 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
     return;
   }
 
-  const phone = getPhoneFromJid(ctx.senderJid);
-  if (ctx.senderJid.endsWith('@lid') && phone) {
+  if (ctx.senderJid.endsWith('@lid')) {
     await saveLidMapping(ctx.senderJid, phone);
   }
 
