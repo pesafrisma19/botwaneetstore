@@ -19,6 +19,7 @@ export async function apiRequest<T = unknown>(
   options: {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
     apiKey?: string;
+    botKey?: string;
     body?: Record<string, unknown>;
     query?: Record<string, string | number | undefined>;
   } = {}
@@ -41,6 +42,9 @@ export async function apiRequest<T = unknown>(
 
   if (options.apiKey) {
     headers['X-API-KEY'] = options.apiKey;
+  }
+  if (options.botKey) {
+    headers['X-BOT-KEY'] = options.botKey;
   }
 
   let lastError = '';

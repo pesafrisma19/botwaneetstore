@@ -13,6 +13,7 @@ export interface AppConfig {
   botName: string;
   httpPort: number;
   webhookSecret: string;
+  botSecret: string;
 }
 
 export function validateEnv(): AppConfig {
@@ -25,6 +26,7 @@ export function validateEnv(): AppConfig {
   const botName = process.env.BOT_NAME || 'NEETstore Bot';
   const httpPort = Number(process.env.HTTP_PORT || process.env.PORT || 8001);
   const webhookSecret = process.env.WEBHOOK_SECRET || 'neetstore-bot-webhook-secret';
+  const botSecret = process.env.BOT_SECRET || 'neetstore-bot-secret';
 
   return {
     nodeEnv,
@@ -36,5 +38,6 @@ export function validateEnv(): AppConfig {
     botName,
     httpPort,
     webhookSecret,
+    botSecret,
   };
 }

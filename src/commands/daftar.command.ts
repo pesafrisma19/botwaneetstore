@@ -49,6 +49,23 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
   }
 
   const data = res.data;
+
+  // Kasus: nomor & API key sudah aktif → arahkan ke login
+  if (data.alreadyRegistered) {
+    const text = [
+      '✅ *Nomor WhatsApp kamu sudah terdaftar!*',
+      '',
+      `👤 Username : ${data.username}`,
+      `⭐ Level    : ${data.level || 'MEMBER'}`,
+      '',
+      'Akun kamu sudah punya API Key aktif.',
+      'Tautkan bot dengan:',
+      '`new!login <API_KEY>`',
+    ].join('\n');
+    await ctx.sock.sendMessage(ctx.chatId, { text }, { quoted: ctx.rawMessage });
+    return;
+  }
+
   const apiKey = data.apiKey;
 
   if (apiKey) {
@@ -68,6 +85,7 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
     '👤 Username': data.username,
     '⭐ Level': data.level || 'MEMBER',
   };
+  if (data.password) rows['🔑 Password'] = data.password;
   if (apiKey) rows['🔑 API Key'] = apiKey;
 
   const text = [
@@ -75,7 +93,9 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
     '',
     infoBox('📋 *Data Akun Kamu*', rows),
     '',
-    '⚠️ *Simpan data di atas baik-baik!* API Key tidak bisa dilihat lagi.',
+    '⚠️ *Simpan data di atas baik-baik!*\n🔐 Password & API Key tidak bisa dilihat lagi.',
+    '',
+    'Kamu bisa login ke website dengan username & password di atas.',
   ].join('\n');
 
   await ctx.sock.sendMessage(ctx.chatId, { text: text }, { quoted: ctx.rawMessage });
