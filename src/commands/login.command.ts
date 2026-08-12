@@ -1,9 +1,10 @@
 import { CommandContext } from '../types/command.types';
 import { fetchApiProfile } from '../api/profile/profile.api';
-import { setSession, getPhoneFromJid, saveLidMapping } from '../storage/session';
-import { formatRupiah, normalizePhone } from '../lib/utils';
+import { setSession, saveLidMapping } from '../storage/session';
+import { formatRupiah } from '../lib/utils';
 import { infoBox, loading, error } from '../lib/formatter';
 import { logger } from '../lib/logger';
+import { resolvePhone } from '../lib/lid';
 
 export async function loginCommand(ctx: CommandContext): Promise<void> {
   const isGroup = ctx.chatId.endsWith('@g.us');
@@ -42,27 +43,8 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
 
   const profile = res.data;
 
-  let phone = getPhoneFromJid(ctx.senderJid);
-
-  // Resolve LID → nomor asli dari berbagai sumber metadata pesan (sama seperti daftar)
-  if (!phone && ctx.senderJid.endsWith('@lid')) {
-    const waKey = ctx.rawMessage.key as unknown as {
-      senderPn?: string;
-      participantPn?: string;
-      participantAlt?: string;
-      remoteJidAlt?: string;
-    };
-
-    const pn = waKey.senderPn ?? waKey.participantPn ?? waKey.participantAlt ?? waKey.remoteJidAlt;
-
-    if (pn) {
-      const resolved = normalizePhone(pn);
-      if (resolved) {
-        phone = resolved;
-        saveLidMapping(ctx.senderJid, resolved);
-      }
-    }
-  }
+  // Resolve nomor WhatsApp asli (dari mapping LID / metadata pesan). Tanpa fallback ke LID.
+  const phone = resolvePhone({ senderJid: ctx.senderJid, rawMessage: ctx.rawMessage });
 
   // Kalau nomor asli tidak ketemu, tolak biar tidak salah identitas
   if (!phone) {

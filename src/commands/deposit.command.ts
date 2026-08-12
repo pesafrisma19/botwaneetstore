@@ -4,10 +4,11 @@ import {
   fetchApiDepositDetails,
   fetchApiDepositsHistory,
 } from '../api/deposits/deposits.api';
-import { getSession, getPhoneFromJid, saveInvoiceMapping } from '../storage/session';
+import { getSession, saveInvoiceMapping } from '../storage/session';
 import { formatRupiah } from '../lib/utils';
 import { loading, error } from '../lib/formatter';
 import { logger } from '../lib/logger';
+import { resolvePhone } from '../lib/lid';
 
 export async function depositCommand(ctx: CommandContext): Promise<void> {
   const sess = getSession(ctx.senderJid);
@@ -47,10 +48,13 @@ export async function depositCommand(ctx: CommandContext): Promise<void> {
 
   const d = res.data;
 
-  const phone = getPhoneFromJid(ctx.senderJid);
+  // Simpan mapping invoice → nomor WA hanya jika nomor valid (tanpa fallback ke LID)
+  const phone = resolvePhone({ senderJid: ctx.senderJid, rawMessage: ctx.rawMessage });
   if (phone) {
     if (d.refId) saveInvoiceMapping(d.refId, phone);
     if (d.clientRefId) saveInvoiceMapping(d.clientRefId, phone);
+  } else {
+    logger.warn({ refId: d.refId }, 'Invoice deposit tidak dipetakan ke nomor: resolve nomor gagal');
   }
 
   let text = `🏷️ *DETAIL DEPOSIT*\n`;

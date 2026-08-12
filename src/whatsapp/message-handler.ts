@@ -5,8 +5,7 @@ import { config } from '../config';
 import { getPendingOrder, clearPendingOrder } from '../state/order-pending';
 import { confirmOrder } from '../commands/order.command';
 import { logger } from '../lib/logger';
-import { saveLidMapping } from '../storage/session';
-import { normalizePhone } from '../lib/utils';
+import { resolvePhone } from '../lib/lid';
 
 const YES_ARGS = ['Y', 'YA', 'YES', 'OK', 'GAS', 'LANJUT'];
 const NO_ARGS = ['N', 'NO', 'GA', 'GAK', 'G', 'TIDAK', 'BATAL'];
@@ -34,18 +33,8 @@ export function handleIncomingMessages(sock: WASocket, upsert: BaileysEventMap['
 
     const senderJid = msg.key.participant || chatId;
 
-    // Resolve LID → nomor asli. WhatsApp mengirim senderPn di key ketika pengirim adalah LID.
-    // Field ini spesifik baileys 6.7.16 (msg.key.senderPn / msg.key.senderLid).
-    if (senderJid.endsWith('@lid')) {
-      const waKey = msg.key as unknown as { senderPn?: string; senderLid?: string };
-      const pn = waKey.senderPn || waKey.senderLid || '';
-      if (pn) {
-        const resolved = normalizePhone(pn);
-        if (resolved) {
-          saveLidMapping(senderJid, resolved);
-        }
-      }
-    }
+    // Resolve LID → nomor asli (semua sumber metadata), simpan cache mapping.
+    resolvePhone({ senderJid, rawMessage: msg });
 
     // 1. Cek konfirmasi order menggantung (Y/N)
     const pending = getPendingOrder(senderJid);

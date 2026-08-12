@@ -1,9 +1,9 @@
 import { CommandContext } from '../types/command.types';
 import { requestBotRegistration, BotRegisterResult } from '../api/auth/auth.api';
-import { setSession, getPhoneFromJid, saveLidMapping } from '../storage/session';
+import { setSession, saveLidMapping } from '../storage/session';
 import { infoBox, loading, error } from '../lib/formatter';
 import { logger } from '../lib/logger';
-import { normalizePhone } from '../lib/utils';
+import { resolvePhone } from '../lib/lid';
 
 export async function daftarCommand(ctx: CommandContext): Promise<void> {
   const isGroup = ctx.chatId.endsWith('@g.us');
@@ -28,27 +28,8 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
     return;
   }
 
-  let phone = getPhoneFromJid(ctx.senderJid);
-
-  // Resolve LID → nomor asli dari berbagai sumber metadata pesan
-  if (!phone && ctx.senderJid.endsWith('@lid')) {
-    const waKey = ctx.rawMessage.key as unknown as {
-      senderPn?: string;
-      participantPn?: string;
-      participantAlt?: string;
-      remoteJidAlt?: string;
-    };
-
-    const pn = waKey.senderPn ?? waKey.participantPn ?? waKey.participantAlt ?? waKey.remoteJidAlt;
-
-    if (pn) {
-      const resolved = normalizePhone(pn);
-      if (resolved) {
-        phone = resolved;
-        saveLidMapping(ctx.senderJid, resolved);
-      }
-    }
-  }
+  // Resolve nomor WhatsApp asli (dari mapping LID / metadata pesan). Tanpa fallback ke LID.
+  const phone = resolvePhone({ senderJid: ctx.senderJid, rawMessage: ctx.rawMessage });
 
   const fullname = ctx.rawMessage.pushName || '';
 

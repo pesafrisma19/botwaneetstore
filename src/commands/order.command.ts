@@ -7,11 +7,12 @@ import {
 } from '../api/orders/orders.api';
 import { fetchApiProducts } from '../api/products/products.api';
 import { validateAccount } from '../api/validation/validation.api';
-import { getSession, getPhoneFromJid, saveInvoiceMapping } from '../storage/session';
+import { getSession, saveInvoiceMapping } from '../storage/session';
 import { formatRupiah } from '../lib/utils';
 import { loading, error, infoBox } from '../lib/formatter';
 import { logger } from '../lib/logger';
 import { setPendingOrder, clearPendingOrder, PendingOrder } from '../state/order-pending';
+import { resolvePhone } from '../lib/lid';
 
 function generateRefId(): string {
   return 'BOT' + Date.now() + crypto.randomBytes(2).toString('hex').toUpperCase();
@@ -149,10 +150,13 @@ export async function confirmOrder(ctx: CommandContext, pending: PendingOrder): 
 
   const d = res.data;
 
-  const phone = getPhoneFromJid(ctx.senderJid);
+  // Simpan mapping invoice → nomor WA hanya jika nomor valid (tanpa fallback ke LID)
+  const phone = resolvePhone({ senderJid: ctx.senderJid, rawMessage: ctx.rawMessage });
   if (phone) {
     if (d.invoiceId) saveInvoiceMapping(d.invoiceId, phone);
     if (d.refId && d.refId !== d.invoiceId) saveInvoiceMapping(d.refId, phone);
+  } else {
+    logger.warn({ invoiceId: d.invoiceId }, 'Invoice order tidak dipetakan ke nomor: resolve nomor gagal');
   }
 
   let text = `🏷️ *INVOICE ORDER*\n`;
