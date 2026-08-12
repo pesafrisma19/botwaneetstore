@@ -30,9 +30,10 @@ export async function profilCommand(ctx: CommandContext): Promise<void> {
 
   const p = res.data;
   const isSaldo = ctx.commandName === 'saldo' || ctx.commandName === 'ceksaldo' || ctx.commandName === 'balance';
+  const displayName = p.fullname || p.username;
 
   if (isSaldo) {
-    const text = `💰 *Saldo Kamu*\n\n👤 ${p.username}\n💵 *${formatRupiah(p.balance)}*`;
+    const text = `💰 *Saldo Kamu*\n\n👤 ${displayName}\n💵 *${formatRupiah(p.balance)}*`;
     await ctx.sock.sendMessage(ctx.chatId, { text }, { quoted: ctx.rawMessage });
     return;
   }
@@ -41,7 +42,7 @@ export async function profilCommand(ctx: CommandContext): Promise<void> {
     '👤 *PROFIL AKUN*',
     '──────────────',
     infoBox('📋 *Data Akun*', {
-      '👤 Username': p.username,
+      '👤 Nama': displayName,
       '⭐ Level': p.level,
       '💰 Balance': formatRupiah(p.balance),
     }),

@@ -3,6 +3,7 @@ import { apiRequest, ApiResponse } from '../client';
 export interface ApiProfileData {
   id: number;
   username: string;
+  fullname: string | null;
   level: string;
   balance: number;
 }

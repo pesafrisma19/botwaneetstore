@@ -61,7 +61,7 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
     '✅ *Login / Tautkan Akun Berhasil!*',
     '',
     infoBox('📋 *Data Akun Kamu*', {
-      '👤 Username': profile.username,
+      '👤 Nama': profile.fullname || profile.username,
       '⭐ Level': profile.level,
       '💰 Balance': formatRupiah(profile.balance),
     }),
