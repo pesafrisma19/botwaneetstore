@@ -60,8 +60,6 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
   if (apiKey) {
     setSession(ctx.senderJid, {
       apiKey,
-      username: data.username,
-      level: data.level || 'MEMBER',
       updated_at: new Date().toISOString(),
     });
 

@@ -44,8 +44,6 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
 
   const saved = setSession(ctx.senderJid, {
     apiKey,
-    username: profile.username,
-    level: profile.level,
     updated_at: new Date().toISOString(),
   });
 

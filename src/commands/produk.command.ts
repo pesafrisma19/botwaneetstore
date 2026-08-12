@@ -45,7 +45,7 @@ export async function produkCommand(ctx: CommandContext): Promise<void> {
     grouped.get(key)!.push(p);
   }
 
-  let text = `📦 *DAFTAR PRODUK*\n🏅 Level: *${sess.level.toUpperCase()}*\n🛒 *CARA ORDER:* \`new!order <sku> <id> [zone]\`\n───────────────\n`;
+  let text = `📦 *DAFTAR PRODUK*\n🛒 *CARA ORDER:* \`new!order <sku> <id> [zone]\`\n───────────────\n`;
 
   const MAX = 100;
   let total = 0;

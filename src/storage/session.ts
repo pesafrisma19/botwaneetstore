@@ -6,8 +6,6 @@ import { normalizePhone } from '../lib/utils';
 
 export interface SessionData {
   apiKey: string;
-  username: string;
-  level: string;
   updated_at: string;
 }
 
@@ -109,7 +107,7 @@ export function setSession(senderJid: string, data: SessionData): boolean {
 
   memSessions[phone] = { ...data, updated_at: new Date().toISOString() };
   saveFile(SESSION_FILE, memSessions);
-  logger.info({ phone, username: data.username }, 'Session tersimpan');
+  logger.info({ phone }, 'Session tersimpan');
   return true;
 }
 
