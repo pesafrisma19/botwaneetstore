@@ -11,7 +11,7 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
   if (isGroup) {
     await ctx.sock.sendMessage(
       ctx.chatId,
-      { text: 'Login hanya dapat dilakukan melalui chat pribadi.' },
+      { text: 'Command ini hanya bisa digunakan di chat pribadi.' },
       { quoted: ctx.rawMessage }
     );
     return;
