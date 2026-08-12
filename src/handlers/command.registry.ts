@@ -22,8 +22,7 @@ class CommandRegistry {
     this.register({ name: 'help', description: 'Daftar perintah bot', execute: menuCommand });
     this.register({ name: 'menuadmin', description: 'Menu admin', execute: menuAdminCommand });
 
-    this.register({ name: 'daftar', description: 'Daftar akun baru via bot', execute: daftarCommand });
-    this.register({ name: 'register', description: 'Daftar akun baru via bot', execute: daftarCommand });
+    this.register({ name: 'daftar', description: 'Daftar akun baru via bot (grup)', execute: daftarCommand });
     this.register({ name: 'login', description: 'Tautkan akun NEETSTORE dengan API Key', execute: loginCommand });
     this.register({ name: 'logout', description: 'Lepas akun dari bot', execute: logoutCommand });
 

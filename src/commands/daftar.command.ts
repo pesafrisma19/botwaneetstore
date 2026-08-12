@@ -6,21 +6,22 @@ import { logger } from '../lib/logger';
 
 export async function daftarCommand(ctx: CommandContext): Promise<void> {
   const isGroup = ctx.chatId.endsWith('@g.us');
+  const subCommand = ctx.args[0]?.toLowerCase();
 
-  if (!isGroup) {
+  // Wajib format: new!daftar bot
+  if (subCommand !== 'bot') {
     await ctx.sock.sendMessage(
       ctx.chatId,
-      { text: 'Pendaftaran hanya bisa dilakukan di dalam grup.' },
+      { text: '⚠️ Format salah.\nGunakan: new!daftar bot' },
       { quoted: ctx.rawMessage }
     );
     return;
   }
 
-  const username = ctx.args[0]?.toLowerCase().trim();
-  if (!username) {
+  if (!isGroup) {
     await ctx.sock.sendMessage(
       ctx.chatId,
-      { text: '⚠️ Format salah.\nGunakan: new!daftar <username>\n_Contoh: new!daftar johndoe_' },
+      { text: 'Pendaftaran hanya bisa dilakukan di dalam grup.' },
       { quoted: ctx.rawMessage }
     );
     return;
@@ -32,17 +33,13 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
 
   await ctx.sock.sendMessage(ctx.chatId, { text: loading('Sedang memproses pendaftaran...') });
 
-  // Endpoint registrasi bot (butuh penambahan di backend web v1).
   const res = await requestBotRegistration({
-    username,
     wa,
     fullname,
   });
 
   if (!res.success || !res.data) {
-    const msg =
-      res.error ||
-      'Pendaftaran via bot belum tersedia di backend. Silakan daftar melalui website NEETstore, lalu tautkan dengan new!login <API_KEY>.';
+    const msg = res.error || 'Pendaftaran gagal. Silakan coba lagi.';
     logger.warn({ error: res.error }, 'Daftar bot gagal');
     await ctx.sock.sendMessage(ctx.chatId, { text: error(msg) }, { quoted: ctx.rawMessage });
     return;
@@ -52,17 +49,9 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
 
   // Kasus: nomor & API key sudah aktif → arahkan ke login
   if (data.alreadyRegistered) {
-    const text = [
-      '✅ *Nomor WhatsApp kamu sudah terdaftar!*',
-      '',
-      `👤 Username : ${data.username}`,
-      `⭐ Level    : ${data.level || 'MEMBER'}`,
-      '',
-      'Akun kamu sudah punya API Key aktif.',
-      'Tautkan bot dengan:',
-      '`new!login <API_KEY>`',
-    ].join('\n');
-    await ctx.sock.sendMessage(ctx.chatId, { text }, { quoted: ctx.rawMessage });
+    await ctx.sock.sendMessage(ctx.chatId, {
+      text: '✅ Nomor WhatsApp kamu sudah terdaftar!\n\nTautkan akun dengan: `new!login <API_KEY>`',
+    }, { quoted: ctx.rawMessage });
     return;
   }
 
@@ -81,22 +70,29 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
     }
   }
 
+  // Detail akun dikirim ke CHAT PRIBADI (PM) pengirim — aman, tidak bocor di grup
+  const displayPhone = wa.startsWith('62') ? '0' + wa.slice(2) : wa;
   const rows: Record<string, string> = {
-    '👤 Username': data.username,
+    '👤 Nama': fullname || data.username,
+    '📱 Nomor WA': displayPhone,
     '⭐ Level': data.level || 'MEMBER',
   };
   if (data.password) rows['🔑 Password'] = data.password;
-  if (apiKey) rows['🔑 API Key'] = apiKey;
 
-  const text = [
+  const pmText = [
     '✅ *Pendaftaran Berhasil!*',
     '',
     infoBox('📋 *Data Akun Kamu*', rows),
     '',
-    '⚠️ *Simpan data di atas baik-baik!*\n🔐 Password & API Key tidak bisa dilihat lagi.',
+    '🔐 *Login Website:*',
+    'Gunakan nomor WA & password di atas di neetstore.id',
     '',
-    'Kamu bisa login ke website dengan username & password di atas.',
+    '⚠️ *Simpan password baik-baik!* Password tidak bisa dilihat lagi.',
   ].join('\n');
 
-  await ctx.sock.sendMessage(ctx.chatId, { text: text }, { quoted: ctx.rawMessage });
+  await ctx.sock.sendMessage(ctx.senderJid, { text: pmText });
+
+  // Konfirmasi singkat di grup (tanpa rahasia)
+  const groupText = `✅ Pendaftaran *${fullname || data.username}* berhasil!\n\n🤫 Detail akun (nomor WA & password) telah dikirim ke chat pribadi kamu. Silakan cek chat bot.`;
+  await ctx.sock.sendMessage(ctx.chatId, { text: groupText }, { quoted: ctx.rawMessage });
 }

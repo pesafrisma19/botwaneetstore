@@ -2,7 +2,6 @@ import { apiRequest, ApiResponse } from '../client';
 import { botSecret } from '../../config';
 
 export interface BotRegisterPayload {
-  username: string;
   wa: string;
   fullname?: string;
 }
@@ -22,7 +21,6 @@ export function requestBotRegistration(payload: BotRegisterPayload): Promise<Api
     method: 'POST',
     botKey: botSecret,
     body: {
-      username: payload.username,
       wa: payload.wa,
       fullname: payload.fullname,
     },
