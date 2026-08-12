@@ -23,7 +23,7 @@ export function validateEnv(): AppConfig {
   const neetstoreApiBaseUrl = process.env.NEETSTORE_API_BASE_URL || 'https://api.neetstore.id';
   const ownerNumber = process.env.OWNER_NUMBER || '6285220581369';
   const botName = process.env.BOT_NAME || 'NEETstore Bot';
-  const httpPort = Number(process.env.HTTP_PORT || process.env.PORT || 3000);
+  const httpPort = Number(process.env.HTTP_PORT || process.env.PORT || 8001);
   const webhookSecret = process.env.WEBHOOK_SECRET || 'neetstore-bot-webhook-secret';
 
   return {
