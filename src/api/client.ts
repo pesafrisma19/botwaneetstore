@@ -9,6 +9,7 @@ export interface ApiResponse<T = unknown> {
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1000;
+const REQUEST_TIMEOUT_MS = 15000;
 
 async function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -50,11 +51,14 @@ export async function apiRequest<T = unknown>(
   let lastError = '';
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
       const res = await fetch(url.toString(), {
         method: options.method || 'GET',
         headers,
         body: options.body ? JSON.stringify(options.body) : undefined,
+        signal: controller.signal,
       });
 
       let json: any = null;
@@ -76,10 +80,15 @@ export async function apiRequest<T = unknown>(
 
       return { success: true, data: json as T };
     } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        return { success: false, error: 'Waktu request ke server habis. Coba lagi nanti.' };
+      }
       lastError = err?.message || 'Gagal terhubung ke server NEETSTORE API.';
       if (attempt < MAX_RETRIES) {
         await delay(RETRY_DELAY_MS * (attempt + 1));
       }
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 

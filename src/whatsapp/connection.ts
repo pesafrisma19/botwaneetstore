@@ -14,8 +14,36 @@ import { loadAll } from '../storage/session';
 let isConnecting = false;
 let currentQr = '';
 
+const RECONNECT_BASE_MS = 3000;
+const RECONNECT_MAX_MS = 60000;
+let reconnectDelayMs = RECONNECT_BASE_MS;
+let reconnectTimer: NodeJS.Timeout | null = null;
+
 export function getCurrentQr(): string {
   return currentQr;
+}
+
+function scheduleReconnect(config: AppConfig): void {
+  if (reconnectTimer) return;
+  const delay = reconnectDelayMs;
+  reconnectDelayMs = Math.min(reconnectDelayMs * 2, RECONNECT_MAX_MS);
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    startWhatsAppConnection(config).catch((err) => {
+      console.error('❌ Failed to reconnect WhatsApp:', err?.message || err);
+    });
+  }, delay);
+}
+
+function clearReconnectTimer(): void {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+}
+
+function resetReconnectBackoff(): void {
+  reconnectDelayMs = RECONNECT_BASE_MS;
 }
 
 export async function startWhatsAppConnection(config: AppConfig): Promise<WASocket> {
@@ -59,6 +87,8 @@ export async function startWhatsAppConnection(config: AppConfig): Promise<WASock
     if (connection === 'open') {
       isConnecting = false;
       currentQr = '';
+      clearReconnectTimer();
+      resetReconnectBackoff();
       const botNumber = sock.user?.id ? sock.user.id.split(':')[0] : 'Unknown';
       console.log('\n================================================================');
       console.log(`✅ WHATSAPP BOT CONNECTED SUCCESSFULLY!`);
@@ -75,15 +105,14 @@ export async function startWhatsAppConnection(config: AppConfig): Promise<WASock
       console.log(`⚠️ Connection closed. Status Code: ${statusCode || 'Unknown'}`);
 
       if (isLoggedOut) {
+        // JANGAN auto-reconnect saat sesi di-logout WhatsApp.
+        clearReconnectTimer();
+        resetReconnectBackoff();
         console.error('\n❌ FATAL: Bot session was logged out by WhatsApp.');
         console.error('👉 Please clear/delete the "auth/" folder and restart the bot to scan a new QR code.\n');
       } else {
-        console.log('🔄 Temporary disconnection detected. Reconnecting in 3 seconds...');
-        setTimeout(() => {
-          startWhatsAppConnection(config).catch((err) => {
-            console.error('❌ Failed to reconnect WhatsApp:', err?.message || err);
-          });
-        }, 3000);
+        console.log('🔄 Temporary disconnection detected. Reconnecting with exponential backoff...');
+        scheduleReconnect(config);
       }
     }
   });

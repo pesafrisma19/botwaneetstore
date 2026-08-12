@@ -6,6 +6,7 @@ export interface ApiProfileData {
   fullname: string | null;
   level: string;
   balance: number;
+  phone?: string | null;
 }
 
 export async function fetchApiProfile(apiKey: string): Promise<ApiResponse<ApiProfileData>> {

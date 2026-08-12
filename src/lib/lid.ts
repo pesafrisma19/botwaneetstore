@@ -28,9 +28,9 @@ export function resolvePhone(ctx: MessageContext): string | null {
     return normalizePhone(senderJid.split('@')[0]);
   }
 
-  // 2. Bukan LID juga (misal grup jid tanpa @lid) → normalize apa adanya
+  // 2. Bukan LID (misal @g.us / @newsletter / suffix tak dikenal) → TOLAK
   if (!senderJid.endsWith('@lid')) {
-    return normalizePhone(senderJid.split('@')[0]);
+    return null;
   }
 
   // 3. LID → cek mapping tersimpan

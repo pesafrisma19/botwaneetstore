@@ -28,6 +28,19 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
     return;
   }
 
+  // Resolve nomor WhatsApp asli SEBELUM request API — tanpa fallback ke LID.
+  const phone = resolvePhone({ senderJid: ctx.senderJid, rawMessage: ctx.rawMessage });
+
+  // Kalau nomor asli tidak ketemu, tolak biar tidak salah identitas
+  if (!phone) {
+    await ctx.sock.sendMessage(
+      ctx.chatId,
+      { text: error('Nomor WhatsApp tidak teridentifikasi. Silakan kirim pesan sekali lagi, lalu coba new!login <API_KEY>.') },
+      { quoted: ctx.rawMessage }
+    );
+    return;
+  }
+
   await ctx.sock.sendMessage(ctx.chatId, { text: loading('Mensinkronkan akun dengan website...') });
 
   const res = await fetchApiProfile(apiKey);
@@ -43,14 +56,12 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
 
   const profile = res.data;
 
-  // Resolve nomor WhatsApp asli (dari mapping LID / metadata pesan). Tanpa fallback ke LID.
-  const phone = resolvePhone({ senderJid: ctx.senderJid, rawMessage: ctx.rawMessage });
-
-  // Kalau nomor asli tidak ketemu, tolak biar tidak salah identitas
-  if (!phone) {
+  // WAJIB: API key harus milik User dengan nomor WhatsApp pengirim yang SAMA.
+  const accountDigits = String(profile.phone || '').replace(/\D/g, '');
+  if (!profile.phone || accountDigits !== phone) {
     await ctx.sock.sendMessage(
       ctx.chatId,
-      { text: error('Nomor WhatsApp tidak teridentifikasi. Silakan kirim pesan sekali lagi, lalu coba new!login <API_KEY>.') },
+      { text: error('API Key tidak sesuai dengan nomor WhatsApp kamu.') },
       { quoted: ctx.rawMessage }
     );
     return;

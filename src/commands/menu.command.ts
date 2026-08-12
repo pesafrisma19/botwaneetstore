@@ -10,7 +10,7 @@ export async function menuCommand(ctx: CommandContext): Promise<void> {
 
 📋 *Daftar Perintah User:*
 
-${section('📝 *AKUN*', `│  ${prefix}daftar <username>
+${section('📝 *AKUN*', `│  ${prefix}daftar bot
 │  ${prefix}login <API_KEY>  — Tautkan akun web
 │  ${prefix}profil  — Info akun & saldo
 │  ${prefix}saldo   — Cek saldo saja`)}

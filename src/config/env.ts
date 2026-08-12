@@ -25,8 +25,17 @@ export function validateEnv(): AppConfig {
   const ownerNumber = process.env.OWNER_NUMBER || '6285220581369';
   const botName = process.env.BOT_NAME || 'NEETstore Bot';
   const httpPort = Number(process.env.HTTP_PORT || process.env.PORT || 8001);
-  const webhookSecret = process.env.WEBHOOK_SECRET || 'neetstore-bot-webhook-secret';
-  const botSecret = process.env.BOT_SECRET || 'neetstore-bot-secret';
+
+  // Secret wajib ada dari ENV (tanpa fallback predictable) — FAIL FAST saat start.
+  if (!process.env.WEBHOOK_SECRET) {
+    throw new Error('WEBHOOK_SECRET wajib diisi di file .env');
+  }
+  if (!process.env.BOT_SECRET) {
+    throw new Error('BOT_SECRET wajib diisi di file .env');
+  }
+
+  const webhookSecret = process.env.WEBHOOK_SECRET;
+  const botSecret = process.env.BOT_SECRET;
 
   return {
     nodeEnv,

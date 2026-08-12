@@ -17,11 +17,16 @@ export function phoneTo62(phone: string): string {
 export function normalizePhone(input: string | null | undefined): string | null {
   if (!input) return null;
   let num = String(input).replace(/[^0-9]/g, '');
+  if (!num) return null;
 
-  if (num.startsWith('08')) return '62' + num.slice(1);
-  if (num.startsWith('0')) return '62' + num.slice(1);
-  if (num.startsWith('8') && num.length >= 9 && num.length <= 13) return '62' + num;
-  if (num.startsWith('62')) return num;
+  // Legacy lokal Indonesia (0.. / 08..) — PN WhatsApp selalu membawa kode negara,
+  // jadi kasus '0' hanya berasal dari sumber legacy/manual.
+  if (num.startsWith('0')) num = '62' + num.slice(1);
+
+  // Validasi generik E.164-like internasional (tanpa '+') — total 8 s/d 15 digit.
+  // Tidak ada asumsi prefix 62. Angka @lid (>15 digit / asal tak valid) gagal di sini.
+  if (!/^[1-9]\d{7,14}$/.test(num)) return null;
+
   return num;
 }
 

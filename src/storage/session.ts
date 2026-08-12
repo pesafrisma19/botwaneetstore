@@ -67,14 +67,17 @@ function resolvePhone(senderJid: string): string | null {
     return lidMap[lidKey] || null;
   }
 
-  return normalizePhone(senderJid.split('@')[0]);
+  // Suffix tak dikenal (@g.us, @newsletter, dll) → bukan nomor WA.
+  return null;
 }
 
 export function saveLidMapping(lid: string, phone: string): void {
   if (!lid.endsWith('@lid')) return;
   const lidKey = lid.split('@')[0];
+  // Hanya simpan bila "phone" ter-normalisasi menjadi PN internasional yang valid.
+  // Menolak digit @lid / angka tak valid — bukan sekadar cek length >= 8.
   const normalized = normalizePhone(phone);
-  if (!normalized || normalized.length < 8) return;
+  if (!normalized) return;
 
   if (lidMap[lidKey] === normalized) return;
   lidMap[lidKey] = normalized;
@@ -117,7 +120,8 @@ export function getSession(senderJid: string): SessionData | null {
 
   if (phone && memSessions[phone]) return memSessions[phone];
 
-  if (!senderJid.endsWith('@lid')) {
+  // Fallback varian format (0../62../8..) hanya berlaku untuk JID PN nyata.
+  if (senderJid.endsWith('@s.whatsapp.net')) {
     for (const v of getPhoneVariants(senderJid)) {
       if (memSessions[v]) return memSessions[v];
     }

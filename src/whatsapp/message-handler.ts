@@ -72,6 +72,7 @@ export function handleIncomingMessages(sock: WASocket, upsert: BaileysEventMap['
       .execute({ sock, rawMessage: msg, chatId, senderJid, commandName, args, startTime })
       .catch((err) => {
         logger.error({ command: commandName, err: err?.message || err }, 'Gagal eksekusi command');
+        sock.sendMessage(chatId, { text: '❌ Terjadi kesalahan tak terduga. Coba lagi.' }).catch(() => {});
       });
   }
 }
