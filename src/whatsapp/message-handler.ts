@@ -1,22 +1,25 @@
 import { WASocket, BaileysEventMap } from '@whiskeysockets/baileys';
 import { performance } from 'node:perf_hooks';
 import { commandRegistry } from '../handlers/command.registry';
+import { config } from '../config';
+import { getPendingOrder, clearPendingOrder } from '../state/order-pending';
+import { confirmOrder } from '../commands/order.command';
+import { logger } from '../lib/logger';
+
+const YES_ARGS = ['Y', 'YA', 'YES', 'OK', 'GAS', 'LANJUT'];
+const NO_ARGS = ['N', 'NO', 'GA', 'GAK', 'G', 'TIDAK', 'BATAL'];
 
 export function handleIncomingMessages(sock: WASocket, upsert: BaileysEventMap['messages.upsert']): void {
-  // Process only new messages (notify type)
   if (upsert.type !== 'notify') return;
 
   for (const msg of upsert.messages) {
     const startTime = performance.now();
 
-    // 1. Ignore messages from bot itself
     if (msg.key.fromMe) continue;
 
-    // 2. Ignore status updates / broadcast
     const chatId = msg.key.remoteJid;
     if (!chatId || chatId === 'status@broadcast') continue;
 
-    // 3. Safely extract text message content
     const text = (
       msg.message?.conversation ||
       msg.message?.extendedTextMessage?.text ||
@@ -27,31 +30,44 @@ export function handleIncomingMessages(sock: WASocket, upsert: BaileysEventMap['
 
     if (!text) continue;
 
-    // 4. Extract first word without prefix (case-insensitive)
-    const words = text.split(/\s+/);
-    const firstWord = words[0].toLowerCase();
-
-    // 5. Lookup command in registry
-    const command = commandRegistry.getCommand(firstWord);
-
-    // If command is not registered (e.g. "halo", "test"), STAY SILENT. Do not reply.
-    if (!command) continue;
-
-    // 6. Identify sender for groups vs private chats
     const senderJid = msg.key.participant || chatId;
+
+    // 1. Cek konfirmasi order menggantung (Y/N)
+    const pending = getPendingOrder(senderJid);
+    if (pending) {
+      const upper = text.toUpperCase();
+      if (YES_ARGS.includes(upper)) {
+        confirmOrder(
+          { sock, rawMessage: msg, chatId, senderJid, commandName: 'order', args: [], startTime },
+          pending
+        ).catch((err) => logger.error({ err }, 'Gagal eksekusi order hasil konfirmasi'));
+        clearPendingOrder(senderJid);
+        continue;
+      }
+      if (NO_ARGS.includes(upper)) {
+        clearPendingOrder(senderJid);
+        sock.sendMessage(chatId, { text: '❌ *Pesanan Dibatalkan.*\nSaldo kamu tidak terpotong.' }).catch(() => {});
+        continue;
+      }
+    }
+
+    // 2. Prefix validation
+    if (!text.toLowerCase().startsWith(config.botCommandPrefix.toLowerCase())) continue;
+
+    const textWithoutPrefix = text.slice(config.botCommandPrefix.length).trim();
+    if (!textWithoutPrefix) continue;
+
+    const words = textWithoutPrefix.split(/\s+/);
+    const commandName = words[0].toLowerCase();
     const args = words.slice(1);
 
-    // 7. Execute registered command asynchronously
-    command.execute({
-      sock,
-      rawMessage: msg,
-      chatId,
-      senderJid,
-      commandName: firstWord,
-      args,
-      startTime,
-    }).catch((err) => {
-      console.error(`❌ Error executing command "${firstWord}":`, err?.message || err);
-    });
+    const command = commandRegistry.getCommand(commandName);
+    if (!command) continue;
+
+    command
+      .execute({ sock, rawMessage: msg, chatId, senderJid, commandName, args, startTime })
+      .catch((err) => {
+        logger.error({ command: commandName, err: err?.message || err }, 'Gagal eksekusi command');
+      });
   }
 }

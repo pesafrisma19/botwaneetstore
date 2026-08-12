@@ -9,8 +9,14 @@ import pino from 'pino';
 import { AppConfig } from '../config/env';
 import { setSocketInstance } from './client';
 import { registerWhatsAppEvents } from './events';
+import { loadAll } from '../storage/session';
 
 let isConnecting = false;
+let currentQr = '';
+
+export function getCurrentQr(): string {
+  return currentQr;
+}
 
 export async function startWhatsAppConnection(config: AppConfig): Promise<WASocket> {
   if (isConnecting) {
@@ -19,6 +25,8 @@ export async function startWhatsAppConnection(config: AppConfig): Promise<WASock
 
   isConnecting = true;
   console.log('🔄 Initializing WhatsApp Auth State from auth/ ...');
+
+  loadAll();
 
   const { state, saveCreds } = await useMultiFileAuthState(config.authFolder);
 
@@ -40,6 +48,7 @@ export async function startWhatsAppConnection(config: AppConfig): Promise<WASock
 
     // Render pairing QR code in terminal if session is not yet authenticated
     if (qr) {
+      currentQr = qr;
       console.log('\n================================================================');
       console.log('📱 SCAN THIS QR CODE FROM WHATSAPP MOBILE APP TO PAIR BOT');
       console.log('👉 WhatsApp -> Settings -> Linked Devices -> Link a Device');
@@ -49,6 +58,7 @@ export async function startWhatsAppConnection(config: AppConfig): Promise<WASock
 
     if (connection === 'open') {
       isConnecting = false;
+      currentQr = '';
       const botNumber = sock.user?.id ? sock.user.id.split(':')[0] : 'Unknown';
       console.log('\n================================================================');
       console.log(`✅ WHATSAPP BOT CONNECTED SUCCESSFULLY!`);
@@ -58,6 +68,7 @@ export async function startWhatsAppConnection(config: AppConfig): Promise<WASock
 
     if (connection === 'close') {
       isConnecting = false;
+      currentQr = '';
       const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
       const isLoggedOut = statusCode === DisconnectReason.loggedOut;
 

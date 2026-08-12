@@ -13,8 +13,11 @@
   "license": "ISC",
   "dependencies": {
     "@hapi/boom": "^10.0.1",
+    "@hono/node-server": "^1.19.17",
+    "@supabase/supabase-js": "^2.112.3",
     "@whiskeysockets/baileys": "^6.7.16",
     "dotenv": "^16.4.7",
+    "hono": "^4.13.1",
     "pino": "^9.6.0",
     "qrcode-terminal": "^0.12.0"
   },
