@@ -7,10 +7,10 @@ import { logger } from '../lib/logger';
 export async function daftarCommand(ctx: CommandContext): Promise<void> {
   const isGroup = ctx.chatId.endsWith('@g.us');
 
-  if (isGroup) {
+  if (!isGroup) {
     await ctx.sock.sendMessage(
       ctx.chatId,
-      { text: 'Pendaftaran hanya dapat dilakukan melalui chat pribadi.' },
+      { text: 'Pendaftaran hanya bisa dilakukan di dalam grup.' },
       { quoted: ctx.rawMessage }
     );
     return;
