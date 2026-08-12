@@ -3,6 +3,7 @@ import { requestBotRegistration, BotRegisterResult } from '../api/auth/auth.api'
 import { setSession, getPhoneFromJid, saveLidMapping } from '../storage/session';
 import { infoBox, loading, error } from '../lib/formatter';
 import { logger } from '../lib/logger';
+import { normalizePhone } from '../lib/utils';
 
 export async function daftarCommand(ctx: CommandContext): Promise<void> {
   const isGroup = ctx.chatId.endsWith('@g.us');
@@ -27,9 +28,41 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
     return;
   }
 
-  const phone = getPhoneFromJid(ctx.senderJid);
-  const wa = phone || ctx.senderJid.split('@')[0];
+  let phone = getPhoneFromJid(ctx.senderJid);
+
+  // Resolve LID → nomor asli dari berbagai sumber metadata pesan
+  if (!phone && ctx.senderJid.endsWith('@lid')) {
+    const waKey = ctx.rawMessage.key as unknown as {
+      senderPn?: string;
+      participantPn?: string;
+      participantAlt?: string;
+      remoteJidAlt?: string;
+    };
+
+    const pn = waKey.senderPn ?? waKey.participantPn ?? waKey.participantAlt ?? waKey.remoteJidAlt;
+
+    if (pn) {
+      const resolved = normalizePhone(pn);
+      if (resolved) {
+        phone = resolved;
+        saveLidMapping(ctx.senderJid, resolved);
+      }
+    }
+  }
+
   const fullname = ctx.rawMessage.pushName || '';
+
+  // JANGAN fallback ke LID — kalau nomor asli tidak ketemu, tolak biar tidak bikin akun nomor salah
+  if (!phone) {
+    await ctx.sock.sendMessage(
+      ctx.chatId,
+      { text: '❌ Nomor WhatsApp tidak teridentifikasi. Silakan kirim pesan sekali lagi, lalu coba new!daftar bot.' },
+      { quoted: ctx.rawMessage }
+    );
+    return;
+  }
+
+  const wa = phone;
 
   await ctx.sock.sendMessage(ctx.chatId, { text: loading('Sedang memproses pendaftaran...') });
 
