@@ -107,7 +107,6 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
     '⭐ Level': data.level || 'MEMBER',
   };
   if (data.password) rows['🔑 Password'] = data.password;
-  if (apiKey) rows['🔑 API Key'] = apiKey;
 
   const pmText = [
     '✅ *Pendaftaran Bot Berhasil!*',
@@ -118,13 +117,6 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
     'Gunakan nomor WA & password di atas di neetstore.id',
     '',
     '⚠️ *Simpan password baik-baik!*',
-    '',
-    '💬 *Tautkan Bot:*',
-    'Kirim command berikut di chat ini (PM):',
-    '',
-    '`new!login <API_KEY>`',
-    '',
-    '_Contoh: new!login NST-KEY-XXXX_',
   ].join('\n');
 
   await ctx.sock.sendMessage(ctx.senderJid, { text: pmText });
