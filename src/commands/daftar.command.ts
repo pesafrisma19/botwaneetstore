@@ -69,8 +69,10 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
   }
 
   // Detail akun dikirim ke CHAT PRIBADI (PM) pengirim — aman, tidak bocor di grup
+  const displayPhone = wa.startsWith('62') ? '0' + wa.slice(2) : wa;
   const rows: Record<string, string> = {
     '👤 Nama': fullname || data.username,
+    '📱 Nomor WA': displayPhone,
     '⭐ Level': data.level || 'MEMBER',
   };
   if (data.password) rows['🔑 Password'] = data.password;
@@ -81,7 +83,7 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
     infoBox('📋 *Data Akun Kamu*', rows),
     '',
     '🔐 *Login Website:*',
-    'Gunakan nomor WA & password di atas untuk masuk ke website.',
+    'Gunakan nomor WA & password di atas di neetstore.id',
     '',
     '⚠️ *Simpan password baik-baik!* Password tidak bisa dilihat lagi.',
   ].join('\n');

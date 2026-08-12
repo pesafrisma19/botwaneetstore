@@ -66,7 +66,7 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
       '💰 Balance': formatRupiah(profile.balance),
     }),
     '',
-    'Akun WhatsApp kamu sekarang sudah terhubung dengan website. Ketik *new!menu* untuk melihat perintah.',
+    'Akun WhatsApp kamu sekarang sudah terhubung dengan website NEETstore. Ketik *new!menu* untuk melihat perintah.',
   ].join('\n');
 
   await ctx.sock.sendMessage(ctx.chatId, { text: responseText }, { quoted: ctx.rawMessage });
