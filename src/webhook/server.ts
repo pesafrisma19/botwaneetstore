@@ -96,10 +96,14 @@ export function createWebhookApp() {
 
     try {
       const sock = getSocketInstance();
-      await sock.sendMessage(`${targetPhone.replace('+', '').replace(/\D/g, '')}@s.whatsapp.net`, {
+      const destinationJid = targetPhone.includes('@')
+        ? targetPhone
+        : `${targetPhone.replace('+', '').replace(/\D/g, '')}@s.whatsapp.net`;
+
+      await sock.sendMessage(destinationJid, {
         text: message,
       });
-      logger.info({ event, targetPhone }, 'Notifikasi WA terkirim');
+      logger.info({ event, targetPhone: destinationJid }, 'Notifikasi WA terkirim');
     } catch (err) {
       logger.error({ err: (err as Error)?.message }, 'Gagal kirim notifikasi WA');
     }

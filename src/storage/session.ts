@@ -147,9 +147,12 @@ export function getPhoneFromJid(senderJid: string): string | null {
   return resolvePhone(senderJid);
 }
 
-export function saveInvoiceMapping(invoiceId: string, phone: string): void {
-  if (!invoiceId || !phone) return;
-  invoiceMap[invoiceId] = phone;
+export function saveInvoiceMapping(invoiceId: string, targetJid: string): void {
+  if (!invoiceId || !targetJid) return;
+  const fullJid = targetJid.includes('@')
+    ? targetJid
+    : `${targetJid.replace('+', '').replace(/\D/g, '')}@s.whatsapp.net`;
+  invoiceMap[invoiceId] = fullJid;
   saveFile(INVOICE_FILE, invoiceMap);
 }
 
