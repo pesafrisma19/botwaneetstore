@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { config } from '../config';
 import { logger } from '../lib/logger';
 import { getSocketInstance } from '../whatsapp/client';
-import { getInvoicePhone, getInvoiceTarget } from '../storage/session';
+import { getInvoicePhone, getInvoiceTarget, removeInvoiceMapping } from '../storage/session';
 
 export interface WebhookPayload {
   event?: string;
@@ -115,6 +115,13 @@ export function createWebhookApp() {
         sendOptions
       );
       logger.info({ event, targetPhone: destinationJid }, 'Notifikasi WA terkirim');
+
+      // Clear mapping from invoice_map.json once final status event delivery succeeds
+      if (event === 'order.success' || event === 'order.failed' || event === 'deposit.success' || event === 'deposit.failed') {
+        if (data?.invoiceId) removeInvoiceMapping(data.invoiceId);
+        if (data?.refId) removeInvoiceMapping(data.refId);
+        if (data?.clientRefId) removeInvoiceMapping(data.clientRefId);
+      }
     } catch (err) {
       logger.error({ err: (err as Error)?.message }, 'Gagal kirim notifikasi WA');
     }

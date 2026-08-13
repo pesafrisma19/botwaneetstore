@@ -179,6 +179,12 @@ export function getInvoicePhone(invoiceId: string): string | null {
   return target ? target.jid : null;
 }
 
+export function removeInvoiceMapping(invoiceId: string): void {
+  if (!invoiceId || !invoiceMap[invoiceId]) return;
+  delete invoiceMap[invoiceId];
+  saveFile(INVOICE_FILE, invoiceMap);
+}
+
 export function loadAll(): void {
   memSessions = loadFile<SessionFile>(SESSION_FILE, {});
   lidMap = loadFile<LidMapFile>(LID_FILE, {});
