@@ -43,7 +43,7 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
     return;
   }
 
-  const isQris = ctx.args.includes('--qris') || ctx.args.includes('-q');
+  const isQris = ctx.commandName === 'qris' || ctx.commandName === 'payqris' || ctx.args.includes('--qris') || ctx.args.includes('-q');
   const cleanArgs = ctx.args.filter((a) => !a.startsWith('--'));
 
   if (cleanArgs.length < 2) {
@@ -73,20 +73,22 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
     return;
   }
 
-  // Validasi akun game untuk konfirmasi nickname
-  const validateRes = await validateAccount(sess.apiKey, {
-    productId: product.productId,
-    targetAccount,
-    targetZone,
-  });
+  // Validasi akun game jika produk mendukung validasi
+  let nickname = '';
+  if (product.hasValidation !== false) {
+    const validateRes = await validateAccount(sess.apiKey, {
+      productId: product.productId,
+      targetAccount,
+      targetZone,
+    });
 
-  if (!validateRes.success || !validateRes.data?.valid) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: `❌ *Pesanan Gagal*\n\nAlasan: ${validateRes.error || 'Akun game tidak ditemukan / tidak valid.'}` }, { quoted: ctx.rawMessage });
-    return;
+    if (!validateRes.success || !validateRes.data?.valid) {
+      await ctx.sock.sendMessage(ctx.chatId, { text: `❌ *Pesanan Gagal*\n\nAlasan: ${validateRes.error || 'Akun game tidak ditemukan / tidak valid.'}` }, { quoted: ctx.rawMessage });
+      return;
+    }
+
+    nickname = validateRes.data.nickname || '';
   }
-
-  const v = validateRes.data;
-  const nickname = v.nickname || '';
 
   const pending: PendingOrder = {
     senderJid: ctx.senderJid,

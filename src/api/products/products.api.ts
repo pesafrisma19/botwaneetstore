@@ -11,6 +11,7 @@ export interface ApiProduct {
   region?: string | null;
   category: string | null;
   productCategory?: string | null;
+  hasValidation?: boolean;
   price: number;
   availability: string;
   level?: string | null;
