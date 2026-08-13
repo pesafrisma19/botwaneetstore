@@ -14,6 +14,8 @@ import { logger } from '../lib/logger';
 import { setPendingOrder, clearPendingOrder, PendingOrder } from '../state/order-pending';
 import { resolvePhone } from '../lib/lid';
 
+import QRCode from 'qrcode';
+
 function generateRefId(): string {
   return 'BOT' + Date.now() + crypto.randomBytes(2).toString('hex').toUpperCase();
 }
@@ -90,34 +92,97 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
     nickname = validateRes.data.nickname || '';
   }
 
+  // =========================================================================
+  // FLOW A: QRIS MODE (DIRECT INSTANT 1-TAHAP TANPA Y/N)
+  // =========================================================================
+  if (isQris) {
+    await ctx.sock.sendMessage(ctx.chatId, { text: loading('Membuat QRIS pembayaran...') });
+
+    const res = await createApiOrder(sess.apiKey, {
+      sku: product.sku,
+      productId: product.productId,
+      targetAccount,
+      targetZone,
+      refId,
+      nickname,
+      paymentMethod: 'QRIS',
+    });
+
+    if (!res.success || !res.data) {
+      logger.warn({ error: res.error }, 'Order QRIS gagal');
+      await ctx.sock.sendMessage(ctx.chatId, { text: error(res.error || 'Gagal membuat QRIS.') }, { quoted: ctx.rawMessage });
+      return;
+    }
+
+    const d = res.data;
+
+    // Simpan mapping invoice → nomor WA
+    const phone = resolvePhone({ senderJid: ctx.senderJid, rawMessage: ctx.rawMessage });
+    if (phone) {
+      if (d.invoiceId) saveInvoiceMapping(d.invoiceId, phone);
+      if (d.refId && d.refId !== d.invoiceId) saveInvoiceMapping(d.refId, phone);
+    }
+
+    let caption = `🏷️ *TAGIHAN QRIS*\n`;
+    caption += `──────────────\n`;
+    caption += `» *Invoice:* ${d.invoiceId || d.refId}\n`;
+    if (product.brand) caption += `» *Brand:* ${product.brand}\n`;
+    caption += `» *Produk:* ${product.name || d.name}\n`;
+    caption += `» *Target:* ${d.targetAccount}${d.targetZone ? ' (' + d.targetZone + ')' : ''}\n`;
+    caption += `» *Nickname:* ${nickname || '-'}\n`;
+    caption += `──────────────\n`;
+    caption += `» *Harga:* ${formatRupiah(d.price || product.price)}\n`;
+    if (d.feeAmount && Number(d.feeAmount) > 0) caption += `» *Fee Admin:* ${formatRupiah(d.feeAmount)}\n`;
+    caption += `» *Total Bayar:* *${formatRupiah(d.totalAmount || d.price || product.price)}*\n`;
+    caption += `» *Status Pembayaran:* ${d.paymentStatus}\n`;
+    caption += `» *Status Order:* ${d.orderStatus}\n`;
+    caption += `──────────────\n`;
+    caption += `📌 _Scan QRIS di atas untuk membayar._\n`;
+    caption += `_Cek status: \`new!status ${d.refId || d.invoiceId}\`_`;
+
+    if (d.qrString) {
+      try {
+        const qrBuffer = await QRCode.toBuffer(d.qrString, { width: 400, margin: 2 });
+        await ctx.sock.sendMessage(ctx.chatId, { image: qrBuffer, caption: caption.trim() }, { quoted: ctx.rawMessage });
+        return;
+      } catch (err: any) {
+        logger.warn({ err: err?.message }, 'Gagal generate QR image buffer, fallback ke teks');
+      }
+    }
+
+    // Fallback jika qrString null
+    await ctx.sock.sendMessage(ctx.chatId, { text: caption.trim() }, { quoted: ctx.rawMessage });
+    return;
+  }
+
+  // =========================================================================
+  // FLOW B: SALDO MODE (2-TAHAP KONFIRMASI Y/N BEFORE DEDUCTION)
+  // =========================================================================
   const pending: PendingOrder = {
     senderJid: ctx.senderJid,
     refId,
-    sku,
+    sku: product.sku,
     productId: product.productId,
     targetAccount,
     targetZone,
     nickname,
-    paymentMethod: isQris ? 'QRIS' : 'BALANCE',
+    paymentMethod: 'BALANCE',
     timestamp: Date.now(),
     chatId: ctx.chatId,
   };
   setPendingOrder(ctx.senderJid, pending);
 
-  const methodText = isQris ? 'QRIS (bayar langsung)' : 'Saldo';
-  const text = [
-    '🏷️ *KONFIRMASI PESANAN*',
-    '──────────────',
-    `» *Produk (SKU):* ${sku}`,
-    `» *Target:* ${targetAccount}${targetZone ? ' (' + targetZone + ')' : ''}`,
-    `» *Nickname:* ${nickname || '-'}`,
-    `» *Metode Bayar:* ${methodText}`,
-    '──────────────',
-    '',
-    'Apakah data di atas sudah benar? Kesalahan input bukan tanggung jawab Kami.',
-    '',
-    'Ketik *Y* / *YA* / *OK* untuk lanjut, atau *N* / *BATAL* untuk membatalkan.',
-  ].join('\n');
+  let text = `🏷️ *KONFIRMASI PESANAN*\n`;
+  text += `──────────────\n`;
+  if (product.brand) text += `» *Brand:* ${product.brand}\n`;
+  text += `» *Produk:* ${product.name}\n`;
+  text += `» *Target:* ${targetAccount}${targetZone ? ' (' + targetZone + ')' : ''}\n`;
+  text += `» *Nickname:* ${nickname || '-'}\n`;
+  text += `» *Harga:* ${formatRupiah(product.price)}\n`;
+  text += `» *Metode Bayar:* Saldo Akun\n`;
+  text += `──────────────\n\n`;
+  text += `Apakah data di atas sudah benar? Kesalahan input bukan tanggung jawab Kami.\n\n`;
+  text += `Ketik *Y* / *YA* / *OK* untuk lanjut, atau *N* / *BATAL* untuk membatalkan.`;
 
   await ctx.sock.sendMessage(ctx.chatId, { text }, { quoted: ctx.rawMessage });
 }
@@ -152,40 +217,30 @@ export async function confirmOrder(ctx: CommandContext, pending: PendingOrder): 
 
   const d = res.data;
 
-  // Simpan mapping invoice → nomor WA hanya jika nomor valid (tanpa fallback ke LID)
+  // Simpan mapping invoice → nomor WA
   const phone = resolvePhone({ senderJid: ctx.senderJid, rawMessage: ctx.rawMessage });
   if (phone) {
     if (d.invoiceId) saveInvoiceMapping(d.invoiceId, phone);
     if (d.refId && d.refId !== d.invoiceId) saveInvoiceMapping(d.refId, phone);
-  } else {
-    logger.warn({ invoiceId: d.invoiceId }, 'Invoice order tidak dipetakan ke nomor: resolve nomor gagal');
   }
 
   let text = `🏷️ *INVOICE ORDER*\n`;
+  text += `──────────────\n`;
   text += `» *Invoice:* ${d.invoiceId || d.refId}\n`;
   text += `» *Produk:* ${d.name || pending.sku}\n`;
   text += `» *Target:* ${d.targetAccount}${d.targetZone ? ' (' + d.targetZone + ')' : ''}\n`;
   text += `» *Nickname:* ${pending.nickname || '-'}\n`;
   text += `──────────────\n`;
-  text += `» *Harga:* ${formatRupiah(d.price || 0)}\n`;
-  if (d.feeAmount && Number(d.feeAmount) > 0) text += `» *Fee:* ${formatRupiah(d.feeAmount)}\n`;
-  text += `» *Total:* *${formatRupiah(d.totalAmount || d.price || 0)}*\n`;
-  text += `» *Status:* ${d.paymentStatus} / ${d.orderStatus}\n`;
-
-  if (pending.paymentMethod === 'QRIS') {
-    if (d.checkoutUrl) {
-      text += `\n🔗 *Link Pembayaran:*\n${d.checkoutUrl}\n`;
-    }
-    if (d.qrImageUrl) {
-      text += `\n🖼 *QRIS:* ${d.qrImageUrl}\n`;
-    }
-  }
+  text += `» *Total Terpotong:* *${formatRupiah(d.totalAmount || d.price || 0)}*\n`;
+  text += `» *Status Pembayaran:* ${d.paymentStatus}\n`;
+  text += `» *Status Order:* ${d.orderStatus}\n`;
 
   if (d.serialNumber) {
     text += `\n🎫 *Serial:* ${d.serialNumber}\n`;
   }
 
-  text += `\nCek status: new!status ${d.refId || d.invoiceId}`;
+  text += `──────────────\n`;
+  text += `_Cek status: \`new!status ${d.refId || d.invoiceId}\`_`;
 
   await ctx.sock.sendMessage(ctx.chatId, { text }, { quoted: ctx.rawMessage });
 }
