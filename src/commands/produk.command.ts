@@ -64,7 +64,7 @@ export async function produkCommand(ctx: CommandContext): Promise<void> {
   // Pencocokan presisi berdasarkan targetSelector
   available = available.filter((p) => {
     const cleanSlug = slugTarget.toLowerCase();
-    const matchBrand = p.brandSlug === cleanSlug || (p.brand && p.brand.toLowerCase().includes(cleanSlug.replace(/-/g, ' ')));
+    const matchBrand = p.brandSlug === cleanSlug;
     if (!matchBrand) return false;
 
     if (regionTarget === 'Indonesia+null') {
