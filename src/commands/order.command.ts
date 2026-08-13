@@ -116,11 +116,11 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
 
     const d = res.data;
 
-    // Simpan mapping invoice → room JID (grup / chat pribadi)
+    // Simpan mapping invoice → room JID (grup / chat pribadi) + rawMessage untuk quote reply
     const targetRoomJid = ctx.chatId || resolvePhone({ senderJid: ctx.senderJid, rawMessage: ctx.rawMessage });
     if (targetRoomJid) {
-      if (d.invoiceId) saveInvoiceMapping(d.invoiceId, targetRoomJid);
-      if (d.refId && d.refId !== d.invoiceId) saveInvoiceMapping(d.refId, targetRoomJid);
+      if (d.invoiceId) saveInvoiceMapping(d.invoiceId, targetRoomJid, ctx.rawMessage);
+      if (d.refId && d.refId !== d.invoiceId) saveInvoiceMapping(d.refId, targetRoomJid, ctx.rawMessage);
     }
 
     let caption = `🏷️ *TAGIHAN QRIS*\n`;
@@ -217,11 +217,11 @@ export async function confirmOrder(ctx: CommandContext, pending: PendingOrder): 
 
   const d = res.data;
 
-  // Simpan mapping invoice → room JID (grup / chat pribadi)
+  // Simpan mapping invoice → room JID (grup / chat pribadi) + rawMessage untuk quote reply
   const targetRoomJid = ctx.chatId || resolvePhone({ senderJid: ctx.senderJid, rawMessage: ctx.rawMessage });
   if (targetRoomJid) {
-    if (d.invoiceId) saveInvoiceMapping(d.invoiceId, targetRoomJid);
-    if (d.refId && d.refId !== d.invoiceId) saveInvoiceMapping(d.refId, targetRoomJid);
+    if (d.invoiceId) saveInvoiceMapping(d.invoiceId, targetRoomJid, ctx.rawMessage);
+    if (d.refId && d.refId !== d.invoiceId) saveInvoiceMapping(d.refId, targetRoomJid, ctx.rawMessage);
   }
 
   let text = `🏷️ *INVOICE ORDER*\n`;

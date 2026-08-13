@@ -147,18 +147,36 @@ export function getPhoneFromJid(senderJid: string): string | null {
   return resolvePhone(senderJid);
 }
 
-export function saveInvoiceMapping(invoiceId: string, targetJid: string): void {
+export interface InvoiceTarget {
+  jid: string;
+  rawMessage?: any;
+}
+
+export function saveInvoiceMapping(invoiceId: string, targetJid: string, rawMessage?: any): void {
   if (!invoiceId || !targetJid) return;
   const fullJid = targetJid.includes('@')
     ? targetJid
     : `${targetJid.replace('+', '').replace(/\D/g, '')}@s.whatsapp.net`;
-  invoiceMap[invoiceId] = fullJid;
+
+  invoiceMap[invoiceId] = {
+    jid: fullJid,
+    rawMessage: rawMessage || undefined,
+  } as any;
   saveFile(INVOICE_FILE, invoiceMap);
 }
 
+export function getInvoiceTarget(invoiceId: string): InvoiceTarget | null {
+  if (!invoiceId || !invoiceMap[invoiceId]) return null;
+  const val = invoiceMap[invoiceId];
+  if (typeof val === 'string') {
+    return { jid: val };
+  }
+  return val as unknown as InvoiceTarget;
+}
+
 export function getInvoicePhone(invoiceId: string): string | null {
-  if (!invoiceId) return null;
-  return invoiceMap[invoiceId] || null;
+  const target = getInvoiceTarget(invoiceId);
+  return target ? target.jid : null;
 }
 
 export function loadAll(): void {

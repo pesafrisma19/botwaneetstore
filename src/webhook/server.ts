@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { config } from '../config';
 import { logger } from '../lib/logger';
 import { getSocketInstance } from '../whatsapp/client';
-import { getInvoicePhone } from '../storage/session';
+import { getInvoicePhone, getInvoiceTarget } from '../storage/session';
 
 export interface WebhookPayload {
   event?: string;
@@ -84,9 +84,11 @@ export function createWebhookApp() {
 
     // Resolve target WA: prioritas field phone/wa di payload, lalu invoice mapping
     let targetPhone = data?.phone || data?.wa || '';
+    let invoiceTarget: any = null;
     if (!targetPhone) {
       const invoiceKey = data?.invoiceId || data?.refId || data?.clientRefId || '';
-      targetPhone = getInvoicePhone(invoiceKey) || '';
+      invoiceTarget = getInvoiceTarget(invoiceKey);
+      targetPhone = invoiceTarget ? invoiceTarget.jid : '';
     }
 
     if (!targetPhone) {
@@ -100,9 +102,18 @@ export function createWebhookApp() {
         ? targetPhone
         : `${targetPhone.replace('+', '').replace(/\D/g, '')}@s.whatsapp.net`;
 
-      await sock.sendMessage(destinationJid, {
-        text: message,
-      });
+      const sendOptions: any = {};
+      if (invoiceTarget?.rawMessage) {
+        sendOptions.quoted = invoiceTarget.rawMessage;
+      }
+
+      await sock.sendMessage(
+        destinationJid,
+        {
+          text: message,
+        },
+        sendOptions
+      );
       logger.info({ event, targetPhone: destinationJid }, 'Notifikasi WA terkirim');
     } catch (err) {
       logger.error({ err: (err as Error)?.message }, 'Gagal kirim notifikasi WA');
