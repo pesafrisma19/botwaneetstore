@@ -28,6 +28,9 @@ function mapEventToMessage(event: string, data: Record<string, any>): string | n
 
   switch (event) {
     case 'order.processing':
+      if (data?.paymentMethod === 'SALDO_AKUN') {
+        return null;
+      }
       return `⏳ *PESANAN DIPROSES*\n\n» *Invoice:* ${refId}\n» *Produk:* ${productName}\n\nTunggu sebentar, pesananmu sedang dikerjakan otomatis.`;
     case 'order.success':
       return `✅ *PESANAN SUKSES*\n\n» *Invoice:* ${refId}\n» *Produk:* ${productName}\n${data?.serialNumber ? `» *Serial:* ${data.serialNumber}\n` : ''}${data?.message ? `» *Catatan:* ${data.message}\n` : ''}\nTerimakasih telah bertransaksi!`;
