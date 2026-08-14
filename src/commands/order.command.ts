@@ -11,7 +11,7 @@ import { getSession, saveInvoiceMapping } from '../storage/session';
 import { formatRupiah } from '../lib/utils';
 import { loading, error, infoBox } from '../lib/formatter';
 import { logger } from '../lib/logger';
-import { setPendingOrder, clearPendingOrder, PendingOrder } from '../state/order-pending';
+import { setPendingOrder, getPendingOrder, clearPendingOrder, PendingOrder } from '../state/order-pending';
 import { resolvePhone } from '../lib/lid';
 
 import QRCode from 'qrcode';
@@ -158,6 +158,19 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
   // =========================================================================
   // FLOW B: SALDO MODE (2-TAHAP KONFIRMASI Y/N BEFORE DEDUCTION)
   // =========================================================================
+  // Guard: Cek jika user sudah memiliki konfirmasi Y/N yang masih menggantung
+  const existingPending = getPendingOrder(ctx.senderJid);
+  if (existingPending) {
+    let warningText = `⚠️ *MASIH ADA KONFIRMASI PENDING!*\n\n`;
+    warningText += `Anda masih memiliki pesanan yang menunggu konfirmasi:\n`;
+    warningText += `» *SKU:* ${existingPending.sku}\n`;
+    warningText += `» *Target:* ${existingPending.targetAccount}${existingPending.targetZone ? ' (' + existingPending.targetZone + ')' : ''}\n\n`;
+    warningText += `Ketik *Y* / *YA* untuk melanjutkan pesanan tersebut, atau *N* / *BATAL* untuk membatalkannya terlebih dahulu.`;
+
+    await ctx.sock.sendMessage(ctx.chatId, { text: warningText }, { quoted: ctx.rawMessage });
+    return;
+  }
+
   const pending: PendingOrder = {
     senderJid: ctx.senderJid,
     refId,
