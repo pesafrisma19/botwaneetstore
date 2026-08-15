@@ -77,7 +77,9 @@ export async function depositCommand(ctx: CommandContext): Promise<void> {
   if (d.expiredAt) text += `» *Expired:* ${new Date(d.expiredAt).toLocaleString('id-ID')}\n`;
   text += `──────────────\n`;
 
-  if (d.paymentInstructions) {
+  if (d.qrString) {
+    text += `📌 _Scan kode QRIS di atas menggunakan aplikasi e-wallet atau mobile banking Anda._\n`;
+  } else if (d.paymentInstructions) {
     text += `💳 *Instruksi Pembayaran:*\n${d.paymentInstructions}\n\n`;
   }
 
