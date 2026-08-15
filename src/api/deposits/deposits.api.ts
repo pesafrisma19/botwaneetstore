@@ -1,7 +1,9 @@
 import { apiRequest, ApiResponse } from '../client';
 
 export interface ApiDepositResult {
+  isIdempotentReplay?: boolean;
   refId: string;
+  invoiceId?: string;
   clientRefId: string | null;
   amount: number;
   fee: number;
@@ -16,6 +18,7 @@ export interface ApiDepositResult {
   paidAt?: string | null;
   expiredAt?: string | null;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export function createApiDeposit(

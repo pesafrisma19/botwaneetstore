@@ -4,6 +4,7 @@ import { config } from '../config';
 import { logger } from '../lib/logger';
 import { getSocketInstance } from '../whatsapp/client';
 import { getInvoicePhone, getInvoiceTarget, removeInvoiceMapping } from '../storage/session';
+import { formatRupiah } from '../lib/utils';
 
 export interface WebhookPayload {
   event?: string;
@@ -36,10 +37,35 @@ function mapEventToMessage(event: string, data: Record<string, any>): string | n
       return `✅ *PESANAN SUKSES*\n\n» *Invoice:* ${refId}\n» *Produk:* ${productName}\n${data?.serialNumber ? `» *Serial:* ${data.serialNumber}\n` : ''}${data?.message ? `» *Catatan:* ${data.message}\n` : ''}\nTerimakasih telah bertransaksi!`;
     case 'order.failed':
       return `❌ *PESANAN GAGAL*\n\n» *Invoice:* ${refId}\n» *Produk:* ${productName}\n${data?.message ? `» *Catatan:* ${data.message}\n` : ''}\nMaaf atas kendalanya.`;
-    case 'deposit.success':
-      return `✅ *DEPOSIT SUKSES*\n\n» *Ref ID:* ${refId}\n» *Nominal:* Rp ${Number(data?.amount || 0).toLocaleString('id-ID')}\n\nSaldo sudah masuk!`;
-    case 'deposit.failed':
-      return `❌ *DEPOSIT GAGAL*\n\n» *Ref ID:* ${refId}\n» *Nominal:* Rp ${Number(data?.amount || 0).toLocaleString('id-ID')}\n\nSilakan hubungi admin jika ada kendala.`;
+    case 'deposit.success': {
+      const invoiceId = data?.invoiceId || data?.refId || '';
+      const clientRef = data?.clientRefId || (data?.refId !== invoiceId ? data?.refId : '') || '';
+      let msg = `✅ *DEPOSIT BERHASIL*\n\n`;
+      msg += `🆔 *Invoice:* ${invoiceId}\n`;
+      if (clientRef) msg += `🔖 *Ref ID:* ${clientRef}\n`;
+      msg += `──────────────\n`;
+      if (data?.balanceBefore !== undefined) msg += `💰 *Saldo Awal:* ${formatRupiah(data.balanceBefore)}\n`;
+      msg += `➕ *Saldo Masuk:* ${formatRupiah(data?.creditedAmount || data?.amount || 0)}\n`;
+      if (data?.fee && Number(data.fee) > 0) msg += `💳 *Fee Admin:* ${formatRupiah(data.fee)}\n`;
+      if (data?.uniqueCode && Number(data.uniqueCode) > 0) msg += `🔢 *Kode Unik:* ${data.uniqueCode}\n`;
+      if (data?.totalAmount) msg += `💵 *Total Bayar:* ${formatRupiah(data.totalAmount)}\n`;
+      msg += `──────────────\n`;
+      if (data?.balanceAfter !== undefined) msg += `💰 *Total Saldo:* *${formatRupiah(data.balanceAfter)}*\n`;
+      return msg.trim();
+    }
+    case 'deposit.failed': {
+      const invoiceId = data?.invoiceId || data?.refId || '';
+      const clientRef = data?.clientRefId || (data?.refId !== invoiceId ? data?.refId : '') || '';
+      let msg = `❌ *DEPOSIT GAGAL*\n\n`;
+      msg += `🆔 *Invoice:* ${invoiceId}\n`;
+      if (clientRef) msg += `🔖 *Ref ID:* ${clientRef}\n`;
+      msg += `💵 *Nominal:* ${formatRupiah(data?.amount || 0)}\n`;
+      if (data?.paymentMethod) msg += `» *Metode:* ${data.paymentMethod}\n`;
+      msg += `» *Status:* GAGAL / EXPIRED\n`;
+      if (data?.failureReason) msg += `📝 *Alasan:* ${data.failureReason}\n`;
+      msg += `\nSilakan buat deposit baru atau hubungi Admin jika ada kendala.`;
+      return msg.trim();
+    }
     case 'ping':
       return null;
     default:
