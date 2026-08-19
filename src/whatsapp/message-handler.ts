@@ -33,6 +33,9 @@ export function handleIncomingMessages(sock: WASocket, upsert: BaileysEventMap['
 
     const senderJid = msg.key.participant || chatId;
 
+    // Auto read pesan masuk (centang biru)
+    sock.readMessages([msg.key]).catch(() => {});
+
     // Resolve LID → nomor asli (semua sumber metadata), simpan cache mapping.
     resolvePhone({ senderJid, rawMessage: msg });
 
