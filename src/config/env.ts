@@ -20,7 +20,7 @@ export function validateEnv(): AppConfig {
   const nodeEnv = process.env.NODE_ENV || 'development';
   const authFolder = path.join(__dirname, '../../auth');
   const dataFolder = path.join(__dirname, '../../data');
-  const botCommandPrefix = process.env.BOT_COMMAND_PREFIX || 'new!';
+  const botCommandPrefix = process.env.BOT_COMMAND_PREFIX !== undefined ? process.env.BOT_COMMAND_PREFIX : '';
   const neetstoreApiBaseUrl = process.env.NEETSTORE_API_BASE_URL || 'https://api.neetstore.id';
   const ownerNumber = process.env.OWNER_NUMBER || '6285220581369';
   const botName = process.env.BOT_NAME || 'NEETstore Bot';

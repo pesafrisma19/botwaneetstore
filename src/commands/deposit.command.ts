@@ -95,7 +95,20 @@ export async function depositCommand(ctx: CommandContext): Promise<void> {
       await ctx.sock.sendMessage(ctx.chatId, { image: qrBuffer, caption: text.trim() }, { quoted: ctx.rawMessage });
       return;
     } catch (err: any) {
-      logger.warn({ err: err?.message }, 'Gagal generate QR image buffer untuk deposit, fallback ke teks');
+      logger.warn({ err: err?.message }, 'Gagal generate QR image buffer untuk deposit, fallback ke qrImageUrl/teks');
+    }
+  }
+
+  if (d.qrImageUrl) {
+    try {
+      const imgRes = await fetch(d.qrImageUrl);
+      if (imgRes.ok) {
+        const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+        await ctx.sock.sendMessage(ctx.chatId, { image: imgBuffer, caption: text.trim() }, { quoted: ctx.rawMessage });
+        return;
+      }
+    } catch (err: any) {
+      logger.warn({ err: err?.message, url: d.qrImageUrl }, 'Gagal download QR image deposit dari qrImageUrl');
     }
   }
 

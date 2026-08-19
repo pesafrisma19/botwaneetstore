@@ -146,11 +146,24 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
         await ctx.sock.sendMessage(ctx.chatId, { image: qrBuffer, caption: caption.trim() }, { quoted: ctx.rawMessage });
         return;
       } catch (err: any) {
-        logger.warn({ err: err?.message }, 'Gagal generate QR image buffer, fallback ke teks');
+        logger.warn({ err: err?.message }, 'Gagal generate QR image buffer, fallback ke qrImageUrl/teks');
       }
     }
 
-    // Fallback jika qrString null
+    if (d.qrImageUrl) {
+      try {
+        const imgRes = await fetch(d.qrImageUrl);
+        if (imgRes.ok) {
+          const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+          await ctx.sock.sendMessage(ctx.chatId, { image: imgBuffer, caption: caption.trim() }, { quoted: ctx.rawMessage });
+          return;
+        }
+      } catch (err: any) {
+        logger.warn({ err: err?.message, url: d.qrImageUrl }, 'Gagal download QR image dari qrImageUrl');
+      }
+    }
+
+    // Fallback jika qrString dan qrImageUrl null/gagal
     await ctx.sock.sendMessage(ctx.chatId, { text: caption.trim() }, { quoted: ctx.rawMessage });
     return;
   }
