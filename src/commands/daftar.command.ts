@@ -9,11 +9,11 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
   const isGroup = ctx.chatId.endsWith('@g.us');
   const subCommand = ctx.args[0]?.toLowerCase();
 
-  // Wajib format: new!daftar bot
+  // Wajib format: daftar bot
   if (subCommand !== 'bot') {
     await ctx.sock.sendMessage(
       ctx.chatId,
-      { text: '⚠️ Format salah.\nGunakan: new!daftar bot' },
+      { text: '⚠️ Format salah.\nGunakan: daftar bot' },
       { quoted: ctx.rawMessage }
     );
     return;
@@ -37,7 +37,7 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
   if (!phone) {
     await ctx.sock.sendMessage(
       ctx.chatId,
-      { text: '❌ Nomor WhatsApp tidak teridentifikasi. Silakan kirim pesan sekali lagi, lalu coba new!daftar bot.' },
+      { text: '❌ Nomor WhatsApp tidak teridentifikasi. Silakan kirim pesan sekali lagi, lalu coba daftar bot.' },
       { quoted: ctx.rawMessage }
     );
     return;
@@ -64,7 +64,7 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
   // Kasus: nomor & API key sudah aktif → arahkan ke login
   if (data.alreadyRegistered) {
     await ctx.sock.sendMessage(ctx.chatId, {
-      text: '✅ Nomor WhatsApp kamu sudah terdaftar!\n\nTautkan akun dengan: `new!login <API_KEY>`',
+      text: '✅ Nomor WhatsApp kamu sudah terdaftar!\n\nTautkan akun dengan: `login <API_KEY>`',
     }, { quoted: ctx.rawMessage });
     return;
   }

@@ -41,7 +41,7 @@ function parseTarget(rawTarget: string, rawZone: string, args: string[]): { targ
 export async function orderCommand(ctx: CommandContext): Promise<void> {
   const sess = getSession(ctx.senderJid);
   if (!sess) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ Kamu belum terhubung ke bot ini.\n\nSilakan tautkan akun:\nnew!login <API_KEY>' }, { quoted: ctx.rawMessage });
+    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ Kamu belum terhubung ke bot ini.\n\nSilakan tautkan akun:\nlogin <API_KEY>' }, { quoted: ctx.rawMessage });
     return;
   }
 
@@ -52,7 +52,7 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
     await ctx.sock.sendMessage(
       ctx.chatId,
       {
-        text: `❌ *Format salah!*\n\nCara pakai:\nnew!order <sku> <user_id> [zone]${isQris ? ' --qris' : ''}\n\n_Contoh:_\nnew!order ML86 123456789 1234\nnew!order FF10 987654321\n\n💡 Lihat kode SKU di new!produk`,
+        text: `❌ *Format salah!*\n\nCara pakai:\norder <sku> <user_id> [zone]${isQris ? ' --qris' : ''}\n\n_Contoh:_\norder ML86 123456789 1234\norder FF10 987654321\n\n💡 Lihat kode SKU di produk`,
       },
       { quoted: ctx.rawMessage }
     );
@@ -71,7 +71,7 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
   const product = prodRes.data?.find((p) => p.sku.toLowerCase() === sku.toLowerCase() || p.name.toLowerCase().includes(sku.toLowerCase()));
 
   if (!product) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: `❌ *Pesanan Gagal*\n\nProduk dengan SKU *${sku}* tidak ditemukan. Cek kode di new!produk.` }, { quoted: ctx.rawMessage });
+    await ctx.sock.sendMessage(ctx.chatId, { text: `❌ *Pesanan Gagal*\n\nProduk dengan SKU *${sku}* tidak ditemukan. Cek kode di produk.` }, { quoted: ctx.rawMessage });
     return;
   }
 
@@ -138,7 +138,7 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
     caption += `» *Status Order:* ${d.orderStatus}\n`;
     caption += `──────────────\n`;
     caption += `📌 _Scan QRIS di atas untuk membayar._\n`;
-    caption += `_Cek status: \`new!status ${d.refId || d.invoiceId}\`_`;
+    caption += `_Cek status: \`status ${d.refId || d.invoiceId}\`_`;
 
     if (d.qrString) {
       try {
@@ -266,7 +266,7 @@ export async function confirmOrder(ctx: CommandContext, pending: PendingOrder): 
   }
 
   text += `──────────────\n`;
-  text += `_Cek status: \`new!status ${d.refId || d.invoiceId}\`_`;
+  text += `_Cek status: \`status ${d.refId || d.invoiceId}\`_`;
 
   await ctx.sock.sendMessage(ctx.chatId, { text }, { quoted: ctx.rawMessage });
 }
@@ -280,7 +280,7 @@ export async function statusCommand(ctx: CommandContext): Promise<void> {
 
   const refId = ctx.args[0]?.trim();
   if (!refId) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ *Format:* new!status <ref_id>\n_Contoh: new!status BOT1234567890_' }, { quoted: ctx.rawMessage });
+    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ *Format:* status <ref_id>\n_Contoh: status BOT1234567890_' }, { quoted: ctx.rawMessage });
     return;
   }
 

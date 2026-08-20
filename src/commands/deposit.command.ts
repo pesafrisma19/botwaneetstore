@@ -20,7 +20,7 @@ function generateDepositRefId(): string {
 export async function depositCommand(ctx: CommandContext): Promise<void> {
   const sess = getSession(ctx.senderJid);
   if (!sess) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ Kamu belum terhubung ke bot ini.\n\nSilakan tautkan akun:\nnew!login <API_KEY>' }, { quoted: ctx.rawMessage });
+    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ Kamu belum terhubung ke bot ini.\n\nSilakan tautkan akun:\nlogin <API_KEY>' }, { quoted: ctx.rawMessage });
     return;
   }
 
@@ -28,7 +28,7 @@ export async function depositCommand(ctx: CommandContext): Promise<void> {
     await ctx.sock.sendMessage(
       ctx.chatId,
       {
-        text: `❌ *Format salah!*\n\nCara pakai:\nnew!deposit <nominal> <metode>\n\n_Contoh:_\nnew!deposit 50000 QRIS\nnew!deposit 100000 DANA\nnew!deposit 25000 BCA\n\n💡 Metode: QRIS, DANA, BCA, BRI, dll`,
+        text: `❌ *Format salah!*\n\nCara pakai:\ndeposit <nominal> <metode>\n\n_Contoh:_\ndeposit 50000 QRIS\ndeposit 100000 DANA\ndeposit 25000 BCA\n\n💡 Metode: QRIS, DANA, BCA, BRI, dll`,
       },
       { quoted: ctx.rawMessage }
     );
@@ -39,7 +39,7 @@ export async function depositCommand(ctx: CommandContext): Promise<void> {
   const method = ctx.args[1].toUpperCase();
 
   if (isNaN(amount) || amount <= 0) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ Nominal tidak valid. Masukkan angka, contoh: new!deposit 50000 QRIS' }, { quoted: ctx.rawMessage });
+    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ Nominal tidak valid. Masukkan angka, contoh: deposit 50000 QRIS' }, { quoted: ctx.rawMessage });
     return;
   }
 
@@ -87,7 +87,7 @@ export async function depositCommand(ctx: CommandContext): Promise<void> {
     text += `🔗 *Link Pembayaran:*\n${d.checkoutUrl}\n\n`;
   }
 
-  text += `_Cek status: \`new!deposit-status ${d.invoiceId || d.refId}\`_`;
+  text += `_Cek status: \`deposit-status ${d.invoiceId || d.refId}\`_`;
 
   if (d.qrString) {
     try {
@@ -124,7 +124,7 @@ export async function depositStatusCommand(ctx: CommandContext): Promise<void> {
 
   const refId = ctx.args[0]?.trim();
   if (!refId) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ *Format:* new!deposit-status <ref_id / invoice_id>' }, { quoted: ctx.rawMessage });
+    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ *Format:* deposit-status <ref_id / invoice_id>' }, { quoted: ctx.rawMessage });
     return;
   }
 

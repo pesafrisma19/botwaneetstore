@@ -22,7 +22,7 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
   if (!apiKey) {
     await ctx.sock.sendMessage(
       ctx.chatId,
-      { text: '⚠️ Format salah.\nGunakan: new!login <API_KEY>' },
+      { text: '⚠️ Format salah.\nGunakan: login <API_KEY>' },
       { quoted: ctx.rawMessage }
     );
     return;
@@ -35,7 +35,7 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
   if (!phone) {
     await ctx.sock.sendMessage(
       ctx.chatId,
-      { text: error('Nomor WhatsApp tidak teridentifikasi. Silakan kirim pesan sekali lagi, lalu coba new!login <API_KEY>.') },
+      { text: error('Nomor WhatsApp tidak teridentifikasi. Silakan kirim pesan sekali lagi, lalu coba login <API_KEY>.') },
       { quoted: ctx.rawMessage }
     );
     return;
@@ -90,7 +90,7 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
       '💰 Balance': formatRupiah(profile.balance),
     }),
     '',
-    'Akun WhatsApp kamu sekarang sudah terhubung dengan website NEETstore. Ketik *new!menu* untuk melihat perintah.',
+    'Akun WhatsApp kamu sekarang sudah terhubung dengan website NEETstore. Ketik *menu* untuk melihat perintah.',
   ].join('\n');
 
   await ctx.sock.sendMessage(ctx.chatId, { text: responseText }, { quoted: ctx.rawMessage });

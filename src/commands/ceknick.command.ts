@@ -8,7 +8,7 @@ import { logger } from '../lib/logger';
 export async function ceknickCommand(ctx: CommandContext): Promise<void> {
   const sess = getSession(ctx.senderJid);
   if (!sess) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ Kamu belum terhubung ke bot ini.\n\nSilakan tautkan akun:\nnew!login <API_KEY>' }, { quoted: ctx.rawMessage });
+    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ Kamu belum terhubung ke bot ini.\n\nSilakan tautkan akun:\nlogin <API_KEY>' }, { quoted: ctx.rawMessage });
     return;
   }
 
@@ -16,7 +16,7 @@ export async function ceknickCommand(ctx: CommandContext): Promise<void> {
     await ctx.sock.sendMessage(
       ctx.chatId,
       {
-        text: `❌ *Format salah!*\n\nCara pakai:\nnew!ceknick <sku> <id> [zone]\n\n_Contoh:_\nnew!ceknick MOBILE_LEGENDS 123456 1234\nnew!ceknick FF 987654321\n\n💡 Kode produk: new!produk`,
+        text: `❌ *Format salah!*\n\nCara pakai:\nceknick <sku> <id> [zone]\n\n_Contoh:_\nceknick MOBILE_LEGENDS 123456 1234\nceknick FF 987654321\n\n💡 Kode produk: produk`,
       },
       { quoted: ctx.rawMessage }
     );
@@ -47,7 +47,7 @@ export async function ceknickCommand(ctx: CommandContext): Promise<void> {
   );
 
   if (!product) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: error(`Produk *${sku}* tidak ditemukan. Cek kode di new!produk.`) }, { quoted: ctx.rawMessage });
+    await ctx.sock.sendMessage(ctx.chatId, { text: error(`Produk *${sku}* tidak ditemukan. Cek kode di produk.`) }, { quoted: ctx.rawMessage });
     return;
   }
 

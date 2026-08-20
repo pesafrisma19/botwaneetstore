@@ -11,7 +11,7 @@ export async function produkCommand(ctx: CommandContext): Promise<void> {
   if (!sess) {
     await ctx.sock.sendMessage(
       ctx.chatId,
-      { text: '❌ Kamu belum terhubung ke bot ini.\n\nSilakan tautkan akun:\nnew!login <API_KEY>' },
+      { text: '❌ Kamu belum terhubung ke bot ini.\n\nSilakan tautkan akun:\nlogin <API_KEY>' },
       { quoted: ctx.rawMessage }
     );
     return;
