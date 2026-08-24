@@ -8,7 +8,7 @@ import {
 import { fetchApiProducts } from '../api/products/products.api';
 import { validateAccount } from '../api/validation/validation.api';
 import { getSession, saveInvoiceMapping } from '../storage/session';
-import { formatRupiah } from '../lib/utils';
+import { formatRupiah, formatExpiry } from '../lib/utils';
 import { loading, error, infoBox } from '../lib/formatter';
 import { logger } from '../lib/logger';
 import { setPendingOrder, getPendingOrder, clearPendingOrder, PendingOrder } from '../state/order-pending';
@@ -136,6 +136,10 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
     caption += `» *Total Bayar:* *${formatRupiah(d.totalAmount || d.price || product.price)}*\n`;
     caption += `» *Status Pembayaran:* ${d.paymentStatus}\n`;
     caption += `» *Status Order:* ${d.orderStatus}\n`;
+    if (d.expiredAt) {
+      const expFormatted = formatExpiry(d.expiredAt);
+      if (expFormatted) caption += `» *Batas Bayar:* ${expFormatted}\n`;
+    }
     caption += `──────────────\n`;
     caption += `📌 _Scan QRIS di atas untuk membayar._\n`;
     caption += `_Cek status: \`status ${d.refId || d.invoiceId}\`_`;

@@ -20,6 +20,7 @@ export interface ApiOrderResult {
   checkoutUrl?: string | null;
   serialNumber?: string | null;
   message?: string | null;
+  expiredAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

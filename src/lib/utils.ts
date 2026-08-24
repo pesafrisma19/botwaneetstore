@@ -37,3 +37,44 @@ export function phoneToJid(phone: string): string {
 export function formatRupiah(number: number | string | null | undefined): string {
   return 'Rp ' + Number(number || 0).toLocaleString('id-ID');
 }
+
+export function formatExpiry(dateInput: string | Date | null | undefined): string {
+  if (!dateInput) return '';
+  try {
+    const expDate = new Date(dateInput);
+    if (isNaN(expDate.getTime())) return '';
+
+    const now = Date.now();
+    const diffMs = expDate.getTime() - now;
+    const diffMins = Math.round(diffMs / (60 * 1000));
+    const diffHours = Math.round(diffMs / (60 * 60 * 1000));
+
+    const timeFormatter = new Intl.DateTimeFormat('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Jakarta',
+      hour12: false,
+    });
+    const timeStr = timeFormatter.format(expDate).replace('.', ':') + ' WIB';
+
+    if (diffMins > 0 && diffMins < 60) {
+      return `${timeStr} (${diffMins} Menit)`;
+    } else if (diffHours >= 1 && diffHours < 24) {
+      return `${timeStr} (${diffHours} Jam)`;
+    } else {
+      const dateFormatter = new Intl.DateTimeFormat('id-ID', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Asia/Jakarta',
+        hour12: false,
+      });
+      return dateFormatter.format(expDate).replace(/\./g, ':') + ' WIB';
+    }
+  } catch {
+    return '';
+  }
+}
+

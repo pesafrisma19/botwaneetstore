@@ -8,7 +8,7 @@ import {
   ApiDepositResult,
 } from '../api/deposits/deposits.api';
 import { getSession, saveInvoiceMapping } from '../storage/session';
-import { formatRupiah } from '../lib/utils';
+import { formatRupiah, formatExpiry } from '../lib/utils';
 import { loading, error } from '../lib/formatter';
 import { logger } from '../lib/logger';
 import { resolvePhone } from '../lib/lid';
@@ -74,7 +74,10 @@ export async function depositCommand(ctx: CommandContext): Promise<void> {
   text += `💰 *Total Bayar:* *${formatRupiah(d.totalAmount)}*\n\n`;
   text += `» *Metode:* ${d.paymentMethod}\n`;
   text += `» *Status:* ${d.status}\n`;
-  if (d.expiredAt) text += `» *Expired:* ${new Date(d.expiredAt).toLocaleString('id-ID')}\n`;
+  if (d.expiredAt) {
+    const expFormatted = formatExpiry(d.expiredAt);
+    if (expFormatted) text += `» *Batas Bayar:* ${expFormatted}\n`;
+  }
   text += `──────────────\n`;
 
   if (d.qrString) {
