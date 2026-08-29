@@ -1,10 +1,21 @@
 import { apiRequest, ApiResponse } from '../client';
 
+export interface FirstTopupTier {
+  id?: string;
+  name?: string;
+  diamonds?: number;
+  bonus?: number;
+  available?: boolean;
+  statusText?: string;
+}
+
 export interface ApiValidateResult {
   valid: boolean;
   nickname: string;
   detectedRegionCode: string;
   detectedCountry: string;
+  firstTopupAvailable?: boolean;
+  firstTopupTiers?: FirstTopupTier[];
 }
 
 export function validateAccount(

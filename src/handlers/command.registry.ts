@@ -6,7 +6,20 @@ import { profilCommand } from '../commands/profil.command';
 import { produkCommand } from '../commands/produk.command';
 import { orderCommand, statusCommand, riwayatCommand, cancelOrder } from '../commands/order.command';
 import { depositCommand, depositStatusCommand, depositHistoryCommand } from '../commands/deposit.command';
-import { ceknickCommand } from '../commands/ceknick.command';
+import {
+  idmlCommand,
+  idmcCommand,
+  idffCommand,
+  idhokCommand,
+  idgiCommand,
+  idpmCommand,
+  idpubgmCommand,
+  idssCommand,
+  idhsrCommand,
+  idzzzCommand,
+  idbsCommand,
+  cekidCommand,
+} from '../commands/ceknick.command';
 import { menuCommand, menuAdminCommand, paymentCommand } from '../commands/menu.command';
 
 class CommandRegistry {
@@ -57,8 +70,18 @@ class CommandRegistry {
     this.register({ name: 'deposit-status', description: 'Cek status deposit', execute: depositStatusCommand });
     this.register({ name: 'deposit-history', description: 'Riwayat deposit', execute: depositHistoryCommand });
 
-    this.register({ name: 'ceknick', description: 'Cek nickname akun game', execute: ceknickCommand });
-    this.register({ name: 'ceknik', description: 'Cek nickname akun game', execute: ceknickCommand });
+    this.register({ name: 'idml', description: 'Cek akun Mobile Legends', execute: idmlCommand });
+    this.register({ name: 'idmc', description: 'Cek akun Magic Chess', execute: idmcCommand });
+    this.register({ name: 'idff', description: 'Cek akun Free Fire', execute: idffCommand });
+    this.register({ name: 'idhok', description: 'Cek akun Honor of Kings', execute: idhokCommand });
+    this.register({ name: 'idgi', description: 'Cek akun Genshin Impact', execute: idgiCommand });
+    this.register({ name: 'idpm', description: 'Cek akun PUBG Mobile', execute: idpmCommand });
+    this.register({ name: 'idpubgm', description: 'Cek akun PUBG Mobile', execute: idpubgmCommand });
+    this.register({ name: 'idss', description: 'Cek akun Super Sus', execute: idssCommand });
+    this.register({ name: 'idhsr', description: 'Cek akun Honkai Star Rail', execute: idhsrCommand });
+    this.register({ name: 'idzzz', description: 'Cek akun Zenless Zone Zero', execute: idzzzCommand });
+    this.register({ name: 'idbs', description: 'Cek akun Blood Strike', execute: idbsCommand });
+    this.register({ name: 'cekid', description: 'Lihat daftar command cek ID game', execute: cekidCommand });
 
     this.register({ name: 'payment', description: 'Informasi pembayaran', execute: paymentCommand });
     this.register({ name: 'bayar', description: 'Informasi pembayaran', execute: paymentCommand });

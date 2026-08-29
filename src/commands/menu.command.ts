@@ -22,8 +22,7 @@ ${section('📦 *PRODUK*', `│  ${prefix}produk          — Semua produk
 ${section('🛒 *ORDER*', `│  ${prefix}order <sku> <id> [zone]
 │  ${prefix}order <sku> <id> --qris  (bayar QRIS)`)}
 
-${section('🔎 *CEK AKUN GAME*', `│  ${prefix}ceknick <sku> <id> [zone]
-│  _Contoh: ${prefix}ceknick MOBILE_LEGENDS 123456 1234_`)}
+${section('🔎 *CEK AKUN GAME*', `│  ${prefix}cekid  — Lihat daftar cek ID game`)}
 
 ${section('📋 *CEK & RIWAYAT*', `│  ${prefix}status <ref_id>  — Cek status order/deposit
 │  ${prefix}riwayat          — Riwayat order`)}
