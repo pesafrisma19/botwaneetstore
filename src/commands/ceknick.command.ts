@@ -118,6 +118,31 @@ export const GAME_VALIDATORS: Record<string, GameValidatorDef> = {
   },
 };
 
+function getCountryFlag(countryCode?: string): string {
+  if (!countryCode || countryCode.length !== 2) return '';
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map((c) => 127397 + c.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+}
+
+function formatCountryDisplay(regionCode?: string, fallbackCountry?: string): string {
+  const code = (regionCode || '').trim().toUpperCase();
+  if (code && code.length === 2) {
+    const flag = getCountryFlag(code);
+    let countryName = '';
+    try {
+      const regionNames = new Intl.DisplayNames(['id'], { type: 'region' });
+      countryName = regionNames.of(code) || fallbackCountry || code;
+    } catch (e) {
+      countryName = fallbackCountry || code;
+    }
+    return `${flag} ${countryName}`.trim();
+  }
+  return fallbackCountry || code;
+}
+
 export async function handleGameValidation(ctx: CommandContext, def: GameValidatorDef): Promise<void> {
   const sess = getSession(ctx.senderJid);
   if (!sess) {
@@ -190,11 +215,11 @@ export async function handleGameValidation(ctx: CommandContext, def: GameValidat
   text += `🆔 ID : ${targetAccount}${targetZone ? ' (' + targetZone + ')' : ''}\n`;
   text += `👤 Nickname : ${v.nickname || 'Tidak ditemukan'}\n`;
 
-  // Khusus ML: Tampilkan Region
+  // Khusus ML: Tampilkan Region (Bendera & Nama Negara Dinamis)
   if (def.showRegion) {
-    const regionName = v.detectedCountry || (v.detectedRegionCode === 'ID' ? 'Indonesia' : v.detectedRegionCode) || '';
-    if (regionName) {
-      text += `🌍 Region : ${regionName}\n`;
+    const regionDisplay = formatCountryDisplay(v.detectedRegionCode, v.detectedCountry);
+    if (regionDisplay) {
+      text += `🌍 Region : ${regionDisplay}\n`;
     }
   }
 
@@ -203,7 +228,7 @@ export async function handleGameValidation(ctx: CommandContext, def: GameValidat
     text += `\n🎁 First Top Up\n`;
     for (const tier of v.firstTopupTiers) {
       const tierName = tier.name || (tier.diamonds ? `${tier.diamonds}+${tier.bonus || tier.diamonds} 💎` : 'Tier');
-      const statusLabel = tier.available ? 'Tersedia' : 'Sudah diklaim';
+      const statusLabel = tier.available ? 'Tersedia ✅' : 'Sudah dibeli ❌';
       text += `• ${tierName} : ${statusLabel}\n`;
     }
   }

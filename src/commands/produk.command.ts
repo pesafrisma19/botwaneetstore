@@ -155,7 +155,7 @@ export async function produkCommand(ctx: CommandContext): Promise<void> {
     const sorted = [...items].sort((a, b) => a.price - b.price);
     for (const p of sorted) {
       const cleanName = (p.name || '').replace(/\*/g, '').trim();
-      text += `*${cleanName}*\n${formatRupiah(p.price)} | Kode: ${p.sku}\n`;
+      text += `*${cleanName}*\n${formatRupiah(p.price)} | Kode: ${p.sku.toLowerCase()}\n`;
     }
   }
 
