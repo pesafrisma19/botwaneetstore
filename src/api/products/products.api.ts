@@ -7,6 +7,7 @@ export interface ApiProduct {
   brandId?: number | null;
   brand: string | null;
   brandSlug?: string | null;
+  brandCategory?: string | null;
   regionId?: number | null;
   region?: string | null;
   category: string | null;

@@ -21,26 +21,60 @@ export async function produkCommand(ctx: CommandContext): Promise<void> {
 
   const code = ctx.args.join(' ').trim().toLowerCase();
 
-  // ===== case A: produk / harga tanpa argumen → tampilkan daftar kode =====
+  // ===== case A: produk / harga tanpa argumen → tampilkan daftar kode dikelompokkan per brandCategory =====
   if (!code) {
-    const entries = Object.entries(BRAND_ALIASES).map(([k, targetStr]) => {
+    const res = await fetchApiProducts(sess.apiKey);
+    const brandMeta = new Map<string, { brandName?: string; brandCategory?: string }>();
+
+    if (res.success && res.data) {
+      for (const p of res.data) {
+        if (p.brandSlug && !brandMeta.has(p.brandSlug)) {
+          brandMeta.set(p.brandSlug, {
+            brandName: p.brand || undefined,
+            brandCategory: p.brandCategory || undefined,
+          });
+        }
+      }
+    }
+
+    const categoryGroups = new Map<string, Array<{ code: string; displayName: string }>>();
+
+    for (const [aliasCode, targetStr] of Object.entries(BRAND_ALIASES)) {
       const [brandSlug, regionTarget] = targetStr.split('|');
+      const meta = brandMeta.get(brandSlug);
+      const catName = meta?.brandCategory || 'Lainnya';
+
+      if (!categoryGroups.has(catName)) {
+        categoryGroups.set(catName, []);
+      }
+
       let regionDisplay = '';
       if (regionTarget && regionTarget !== 'Indonesia+null') {
         regionDisplay = ` (${regionTarget})`;
       } else if (regionTarget === 'Indonesia+null') {
         regionDisplay = ' (Indonesia)';
       }
-      const displayName = brandSlug
+
+      const fallbackName = brandSlug
         .split('-')
         .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
         .join(' ');
-      return { code: k, displayName: `${displayName}${regionDisplay}` };
-    });
+      const displayName = meta?.brandName || fallbackName;
 
-    let text = '📦 *DAFTAR BRAND PRODUK*\n\n💡 _Ketik *produk <kode>* untuk melihat itemnya_\n_Contoh: produk mltr_\n\n';
-    for (const e of entries.sort((a, b) => a.code.localeCompare(b.code))) {
-      text += `*${e.code}* - ${e.displayName}\n`;
+      categoryGroups.get(catName)!.push({
+        code: aliasCode,
+        displayName: `${displayName}${regionDisplay}`,
+      });
+    }
+
+    let text = '📦 *DAFTAR BRAND PRODUK*\n\n💡 _Ketik *produk <kode>* untuk melihat itemnya_\n_Contoh: produk mltr_\n';
+
+    for (const [catName, items] of categoryGroups) {
+      text += `\n*${catName}*\n`;
+      items.sort((a, b) => a.code.localeCompare(b.code));
+      for (const item of items) {
+        text += `• ${item.code} - ${item.displayName}\n`;
+      }
     }
 
     await ctx.sock.sendMessage(ctx.chatId, { text: text.trim() }, { quoted: ctx.rawMessage });
