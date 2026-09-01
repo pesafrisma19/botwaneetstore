@@ -116,6 +116,33 @@ export const GAME_VALIDATORS: Record<string, GameValidatorDef> = {
     showRegion: false,
     showFirstTopup: false,
   },
+  idhgi: {
+    name: 'Higgs Games Island',
+    brandSlug: 'higgs-game-island',
+    requiresZone: false,
+    usage: 'idhgi <User ID>',
+    sample: 'idhgi 12345678',
+    showRegion: false,
+    showFirstTopup: false,
+  },
+  ideggy: {
+    name: 'Eggy Party',
+    brandSlug: 'eggy-party',
+    requiresZone: false,
+    usage: 'ideggy <User ID>',
+    sample: 'ideggy 12345678',
+    showRegion: false,
+    showFirstTopup: false,
+  },
+  idrd: {
+    name: 'Royal Dreams',
+    brandSlug: 'royal-dream',
+    requiresZone: false,
+    usage: 'idrd <User ID>',
+    sample: 'idrd 12345678',
+    showRegion: false,
+    showFirstTopup: false,
+  },
 };
 
 function getCountryFlag(countryCode?: string): string {
@@ -247,6 +274,9 @@ export const idssCommand = (ctx: CommandContext) => handleGameValidation(ctx, GA
 export const idhsrCommand = (ctx: CommandContext) => handleGameValidation(ctx, GAME_VALIDATORS.idhsr);
 export const idzzzCommand = (ctx: CommandContext) => handleGameValidation(ctx, GAME_VALIDATORS.idzzz);
 export const idbsCommand = (ctx: CommandContext) => handleGameValidation(ctx, GAME_VALIDATORS.idbs);
+export const idhgiCommand = (ctx: CommandContext) => handleGameValidation(ctx, GAME_VALIDATORS.idhgi);
+export const ideggyCommand = (ctx: CommandContext) => handleGameValidation(ctx, GAME_VALIDATORS.ideggy);
+export const idrdCommand = (ctx: CommandContext) => handleGameValidation(ctx, GAME_VALIDATORS.idrd);
 
 export async function cekidCommand(ctx: CommandContext): Promise<void> {
   const prefix = config.botCommandPrefix;

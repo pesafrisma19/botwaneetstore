@@ -18,6 +18,9 @@ import {
   idhsrCommand,
   idzzzCommand,
   idbsCommand,
+  idhgiCommand,
+  ideggyCommand,
+  idrdCommand,
   cekidCommand,
 } from '../commands/ceknick.command';
 import { menuCommand, menuAdminCommand, paymentCommand } from '../commands/menu.command';
@@ -81,6 +84,9 @@ class CommandRegistry {
     this.register({ name: 'idhsr', description: 'Cek akun Honkai Star Rail', execute: idhsrCommand });
     this.register({ name: 'idzzz', description: 'Cek akun Zenless Zone Zero', execute: idzzzCommand });
     this.register({ name: 'idbs', description: 'Cek akun Blood Strike', execute: idbsCommand });
+    this.register({ name: 'idhgi', description: 'Cek akun Higgs Games Island', execute: idhgiCommand });
+    this.register({ name: 'ideggy', description: 'Cek akun Eggy Party', execute: ideggyCommand });
+    this.register({ name: 'idrd', description: 'Cek akun Royal Dreams', execute: idrdCommand });
     this.register({ name: 'cekid', description: 'Lihat daftar command cek ID game', execute: cekidCommand });
 
     this.register({ name: 'payment', description: 'Informasi pembayaran', execute: paymentCommand });

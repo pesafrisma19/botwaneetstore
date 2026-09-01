@@ -26,9 +26,34 @@ export const BRAND_ALIASES: Record<string, string> = {
   mc:   'magic-chess',
   ss:   'super-sus',
   pm:   'pubg-mobile',
+  ab:   'arena-breakout',
+  bs:   'blood-strike',
+  bp:   'boss-party',
+  coa:  'crystal-of-atlan',
+  eggy: 'eggy-party',
+  fcm:  'fc-mobile',
+  hgi:  'higgs-game-island',
+  hsr:  'honkai-star-rail',
+  kc:   'kings-choice',
+  msa:  'metal-slug-awakening',
+  rd:   'royal-dream',
+  sm:   'sausage-man',
+  tft:  'teamfight-tactics-mobile',
+  tb:   'tomb-busters',
+  ww:   'wuthering-waves',
+  zzz:  'zenless-zone-zero',
+
+  // ---------------- PLN ----------------
+  pln:  'pln',
 
   // ---------------- PULSA ----------------
   tsel: 'telkomsel',
+  axis: 'axis',
+  byu:  'by.u',
+  xl:   'xl',
+
+  // ---------------- E-WALLET ----------------
+  gopay: 'go-pay',
 };
 
 
