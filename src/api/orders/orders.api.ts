@@ -59,8 +59,8 @@ export function fetchApiOrderDetails(
 export function fetchApiOrdersHistory(
   apiKey: string,
   query?: { page?: number; limit?: number; status?: string; search?: string }
-): Promise<ApiResponse<{ data: ApiOrderResult[]; pagination: Record<string, unknown> }>> {
-  return apiRequest<{ data: ApiOrderResult[]; pagination: Record<string, unknown> }>(
+): Promise<ApiResponse<ApiOrderResult[]>> {
+  return apiRequest<ApiOrderResult[]>(
     '/api/v1/orders',
     {
       method: 'GET',

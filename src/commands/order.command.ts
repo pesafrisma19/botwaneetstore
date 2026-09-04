@@ -322,12 +322,12 @@ export async function riwayatCommand(ctx: CommandContext): Promise<void> {
   await ctx.sock.sendMessage(ctx.chatId, { text: loading('Mengambil riwayat order...') });
 
   const res = await fetchApiOrdersHistory(sess.apiKey, { page: 1, limit: 10 });
-  if (!res.success || !res.data || res.data.data.length === 0) {
+  const items = res.data;
+  if (!res.success || !Array.isArray(items) || items.length === 0) {
     await ctx.sock.sendMessage(ctx.chatId, { text: '📋 Tidak ada riwayat order.' }, { quoted: ctx.rawMessage });
     return;
   }
 
-  const items = res.data.data;
   let text = `📋 *Riwayat Order (10 terakhir)*\n\n`;
   for (const o of items) {
     const emoji = o.orderStatus === 'SUCCESS' ? '✅' : o.orderStatus === 'PROCESS' || o.orderStatus === 'PROCESSING' ? '⏳' : '❌';
