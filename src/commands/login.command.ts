@@ -10,9 +10,18 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
   const isGroup = ctx.chatId.endsWith('@g.us');
 
   if (isGroup) {
+    const groupWarnText = [
+      '🛡️ *Keamanan Akun*',
+      '',
+      'Perintah `login` wajib dilakukan di *Chat Pribadi (Japri) Bot* agar API Key kamu tidak dilihat oleh anggota grup lain.',
+      '',
+      '👉 Silakan kirim pesan ke chat pribadi bot ini:',
+      '`login <API_KEY>`',
+    ].join('\n');
+
     await ctx.sock.sendMessage(
       ctx.chatId,
-      { text: 'Command ini hanya bisa digunakan di chat pribadi.' },
+      { text: groupWarnText },
       { quoted: ctx.rawMessage }
     );
     return;
@@ -20,9 +29,22 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
 
   const apiKey = ctx.args[0]?.trim();
   if (!apiKey) {
+    const formatWarnText = [
+      '⚠️ *Format Login Salah!*',
+      '',
+      'Cara menghubungkan akun website ke Bot WhatsApp:',
+      '',
+      '1️⃣ Dapatkan API Key di web: *neetstore.id* (Menu *Profil ➡️ API Key*)',
+      '2️⃣ Kirim ke chat pribadi ini dengan format:',
+      '   `login <API_KEY>`',
+      '',
+      '_Contoh:_',
+      '`login nts_live_98a7sd8f7as6df78as`',
+    ].join('\n');
+
     await ctx.sock.sendMessage(
       ctx.chatId,
-      { text: '⚠️ Format salah.\nGunakan: login <API_KEY>' },
+      { text: formatWarnText },
       { quoted: ctx.rawMessage }
     );
     return;

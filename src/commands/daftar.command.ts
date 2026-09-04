@@ -61,11 +61,23 @@ export async function daftarCommand(ctx: CommandContext): Promise<void> {
 
   const data = res.data;
 
-  // Kasus: nomor & API key sudah aktif → arahkan ke login
+  // Kasus: nomor & API key sudah aktif → arahkan ke login dengan panduan jelas
   if (data.alreadyRegistered) {
-    await ctx.sock.sendMessage(ctx.chatId, {
-      text: '✅ Nomor WhatsApp kamu sudah terdaftar!\n\nTautkan akun dengan: `login <API_KEY>`',
-    }, { quoted: ctx.rawMessage });
+    const alreadyText = [
+      'ℹ️ *Nomor WhatsApp Kamu Sudah Terdaftar!*',
+      '',
+      'Akun kamu sudah ada di database web. Untuk menghubungkan akun ke bot WhatsApp ini:',
+      '',
+      '1️⃣ Login ke website NEETSTORE: *neetstore.id*',
+      '2️⃣ Buka menu *Profil / Pengaturan Akun* ➡️ Pilih *API Key*',
+      '3️⃣ Salin (Copy) *API Key* kamu',
+      '4️⃣ Kirim perintah berikut ke *Chat Pribadi (Japri) Bot*:',
+      '   `login <API_KEY_KAMU>`',
+      '',
+      '_⚠️ Jangan kirim API Key di dalam grup untuk keamanan akunmu._',
+    ].join('\n');
+
+    await ctx.sock.sendMessage(ctx.chatId, { text: alreadyText }, { quoted: ctx.rawMessage });
     return;
   }
 
