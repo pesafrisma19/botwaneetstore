@@ -90,7 +90,7 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
     if (validateRes.success && validateRes.data?.valid) {
       nickname = validateRes.data.nickname || '';
     } else {
-      nicknameNote = 'Nickname tidak dapat divalidasi. Pastikan ID/Zone yang dimasukkan sudah benar sebelum melanjutkan.';
+      nicknameNote = 'Nickname tidak dapat divalidasi.';
     }
   }
 
