@@ -6,6 +6,10 @@ dist/
 
 # WhatsApp Auth Session Credentials (DO NOT COMMIT)
 /auth/
+/auth-backup-*/
+
+# WhatsApp Session/Data Files (DO NOT COMMIT)
+/data/
 
 # Logs
 logs/

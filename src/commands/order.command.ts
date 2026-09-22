@@ -75,8 +75,11 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
     return;
   }
 
-  // Validasi akun game jika produk mendukung validasi
+  // Validasi akun game jika produk mendukung validasi.
+  // Validasi hanya pelengkap: kegagalan apa pun tidak menggagalkan order,
+  // nickname cukup dikosongkan lalu diberi catatan agar pelanggan memeriksa ID/Zone.
   let nickname = '';
+  let nicknameNote = '';
   if (product.hasValidation !== false) {
     const validateRes = await validateAccount(sess.apiKey, {
       productId: product.productId,
@@ -84,12 +87,11 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
       targetZone,
     });
 
-    if (!validateRes.success || !validateRes.data?.valid) {
-      await ctx.sock.sendMessage(ctx.chatId, { text: `❌ *Pesanan Gagal*\n\nAlasan: ${validateRes.error || 'Akun game tidak ditemukan / tidak valid.'}` }, { quoted: ctx.rawMessage });
-      return;
+    if (validateRes.success && validateRes.data?.valid) {
+      nickname = validateRes.data.nickname || '';
+    } else {
+      nicknameNote = 'Nickname tidak dapat divalidasi. Pastikan ID/Zone yang dimasukkan sudah benar sebelum melanjutkan.';
     }
-
-    nickname = validateRes.data.nickname || '';
   }
 
   // =========================================================================
@@ -130,6 +132,7 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
     caption += `» *Produk:* ${product.name || d.name}\n`;
     caption += `» *Target:* ${d.targetAccount}${d.targetZone ? ' (' + d.targetZone + ')' : ''}\n`;
     caption += `» *Nickname:* ${nickname || '-'}\n`;
+    if (nicknameNote) caption += `⚠️ _${nicknameNote}_\n`;
     caption += `──────────────\n`;
     caption += `» *Harga:* ${formatRupiah(d.price || product.price)}\n`;
     if (d.feeAmount && Number(d.feeAmount) > 0) caption += `» *Fee Admin:* ${formatRupiah(d.feeAmount)}\n`;
@@ -208,6 +211,7 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
   text += `» *Produk:* ${product.name}\n`;
   text += `» *Target:* ${targetAccount}${targetZone ? ' (' + targetZone + ')' : ''}\n`;
   text += `» *Nickname:* ${nickname || '-'}\n`;
+  if (nicknameNote) text += `⚠️ _${nicknameNote}_\n`;
   text += `» *Harga:* ${formatRupiah(product.price)}\n`;
   text += `» *Metode Bayar:* Saldo Akun\n`;
   text += `──────────────\n\n`;
