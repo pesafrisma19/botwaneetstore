@@ -8,6 +8,7 @@ import {
 import { fetchApiProducts } from '../api/products/products.api';
 import { validateAccount } from '../api/validation/validation.api';
 import { getSession, saveInvoiceMapping } from '../storage/session';
+import { assertSessionPhoneMatch } from '../lib/sessionGuard';
 import { formatRupiah, formatExpiry } from '../lib/utils';
 import { loading, error, infoBox } from '../lib/formatter';
 import { logger } from '../lib/logger';
@@ -39,11 +40,9 @@ function parseTarget(rawTarget: string, rawZone: string, args: string[]): { targ
 }
 
 export async function orderCommand(ctx: CommandContext): Promise<void> {
-  const sess = getSession(ctx.senderJid);
-  if (!sess) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ Kamu belum terhubung ke bot ini.\n\nSilakan tautkan akun:\nlogin <API_KEY>' }, { quoted: ctx.rawMessage });
-    return;
-  }
+  const guard = await assertSessionPhoneMatch(ctx);
+  if (!guard.valid) return;
+  const apiKey = guard.apiKey!;
 
   const isQris = ctx.commandName === 'qris' || ctx.commandName === 'payqris' || ctx.args.includes('--qris') || ctx.args.includes('-q');
   const cleanArgs = ctx.args.filter((a) => !a.startsWith('--'));
@@ -67,7 +66,7 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
   // Cari produk dari SKU (untuk dapat productId)
   await ctx.sock.sendMessage(ctx.chatId, { text: loading('Mengecek pesanan...') });
 
-  const prodRes = await fetchApiProducts(sess.apiKey, { search: sku });
+  const prodRes = await fetchApiProducts(apiKey, { search: sku });
   const product = prodRes.data?.find((p) => p.sku.toLowerCase() === sku.toLowerCase() || p.name.toLowerCase().includes(sku.toLowerCase()));
 
   if (!product) {
@@ -81,7 +80,7 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
   let nickname = '';
   let nicknameNote = '';
   if (product.hasValidation !== false) {
-    const validateRes = await validateAccount(sess.apiKey, {
+    const validateRes = await validateAccount(apiKey, {
       productId: product.productId,
       targetAccount,
       targetZone,
@@ -100,7 +99,7 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
   if (isQris) {
     await ctx.sock.sendMessage(ctx.chatId, { text: loading('Membuat QRIS pembayaran...') });
 
-    const res = await createApiOrder(sess.apiKey, {
+    const res = await createApiOrder(apiKey, {
       sku: product.sku,
       productId: product.productId,
       targetAccount,
@@ -224,14 +223,14 @@ export async function orderCommand(ctx: CommandContext): Promise<void> {
 export async function confirmOrder(ctx: CommandContext, pending: PendingOrder): Promise<void> {
   await ctx.sock.sendMessage(ctx.chatId, { text: loading('Memproses order...') });
 
-  const sess = getSession(ctx.senderJid);
-  if (!sess) {
+  const guard = await assertSessionPhoneMatch(ctx);
+  if (!guard.valid) {
     clearPendingOrder(ctx.senderJid);
-    await ctx.sock.sendMessage(ctx.chatId, { text: error('Sesi tidak ditemukan. Silakan login ulang.') });
     return;
   }
+  const apiKey = guard.apiKey!;
 
-  const res = await createApiOrder(sess.apiKey, {
+  const res = await createApiOrder(apiKey, {
     sku: pending.sku,
     productId: pending.productId,
     targetAccount: pending.targetAccount,
@@ -280,11 +279,9 @@ export async function confirmOrder(ctx: CommandContext, pending: PendingOrder): 
 }
 
 export async function statusCommand(ctx: CommandContext): Promise<void> {
-  const sess = getSession(ctx.senderJid);
-  if (!sess) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ Kamu belum terhubung ke bot ini.' }, { quoted: ctx.rawMessage });
-    return;
-  }
+  const guard = await assertSessionPhoneMatch(ctx);
+  if (!guard.valid) return;
+  const apiKey = guard.apiKey!;
 
   const refId = ctx.args[0]?.trim();
   if (!refId) {
@@ -294,7 +291,7 @@ export async function statusCommand(ctx: CommandContext): Promise<void> {
 
   await ctx.sock.sendMessage(ctx.chatId, { text: loading('Mengecek status...') });
 
-  const res = await fetchApiOrderDetails(sess.apiKey, refId);
+  const res = await fetchApiOrderDetails(apiKey, refId);
   if (!res.success || !res.data) {
     await ctx.sock.sendMessage(ctx.chatId, { text: error(res.error || 'Order tidak ditemukan.') }, { quoted: ctx.rawMessage });
     return;
@@ -317,15 +314,13 @@ export async function statusCommand(ctx: CommandContext): Promise<void> {
 }
 
 export async function riwayatCommand(ctx: CommandContext): Promise<void> {
-  const sess = getSession(ctx.senderJid);
-  if (!sess) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ Kamu belum terhubung ke bot ini.' }, { quoted: ctx.rawMessage });
-    return;
-  }
+  const guard = await assertSessionPhoneMatch(ctx);
+  if (!guard.valid) return;
+  const apiKey = guard.apiKey!;
 
   await ctx.sock.sendMessage(ctx.chatId, { text: loading('Mengambil riwayat order...') });
 
-  const res = await fetchApiOrdersHistory(sess.apiKey, { page: 1, limit: 10 });
+  const res = await fetchApiOrdersHistory(apiKey, { page: 1, limit: 10 });
   const items = res.data;
   if (!res.success || !Array.isArray(items) || items.length === 0) {
     await ctx.sock.sendMessage(ctx.chatId, { text: '📋 Tidak ada riwayat order.' }, { quoted: ctx.rawMessage });

@@ -8,6 +8,7 @@ import {
   ApiDepositResult,
 } from '../api/deposits/deposits.api';
 import { getSession, saveInvoiceMapping } from '../storage/session';
+import { assertSessionPhoneMatch } from '../lib/sessionGuard';
 import { formatRupiah, formatExpiry } from '../lib/utils';
 import { loading, error } from '../lib/formatter';
 import { logger } from '../lib/logger';
@@ -18,11 +19,9 @@ function generateDepositRefId(): string {
 }
 
 export async function depositCommand(ctx: CommandContext): Promise<void> {
-  const sess = getSession(ctx.senderJid);
-  if (!sess) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ Kamu belum terhubung ke bot ini.\n\nSilakan tautkan akun:\nlogin <API_KEY>' }, { quoted: ctx.rawMessage });
-    return;
-  }
+  const guard = await assertSessionPhoneMatch(ctx);
+  if (!guard.valid) return;
+  const apiKey = guard.apiKey!;
 
   if (ctx.args.length < 2) {
     await ctx.sock.sendMessage(
@@ -47,7 +46,7 @@ export async function depositCommand(ctx: CommandContext): Promise<void> {
 
   await ctx.sock.sendMessage(ctx.chatId, { text: loading('Membuat tagihan deposit...') });
 
-  const res = await createApiDeposit(sess.apiKey, { amount, paymentMethod: method, refId });
+  const res = await createApiDeposit(apiKey, { amount, paymentMethod: method, refId });
 
   if (!res.success || !res.data) {
     logger.warn({ error: res.error }, 'Deposit gagal');
@@ -119,11 +118,9 @@ export async function depositCommand(ctx: CommandContext): Promise<void> {
 }
 
 export async function depositStatusCommand(ctx: CommandContext): Promise<void> {
-  const sess = getSession(ctx.senderJid);
-  if (!sess) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ Kamu belum terhubung ke bot ini.' }, { quoted: ctx.rawMessage });
-    return;
-  }
+  const guard = await assertSessionPhoneMatch(ctx);
+  if (!guard.valid) return;
+  const apiKey = guard.apiKey!;
 
   const refId = ctx.args[0]?.trim();
   if (!refId) {
@@ -133,7 +130,7 @@ export async function depositStatusCommand(ctx: CommandContext): Promise<void> {
 
   await ctx.sock.sendMessage(ctx.chatId, { text: loading('Mengecek status deposit...') });
 
-  const res = await fetchApiDepositDetails(sess.apiKey, refId);
+  const res = await fetchApiDepositDetails(apiKey, refId);
   if (!res.success || !res.data) {
     await ctx.sock.sendMessage(ctx.chatId, { text: error(res.error || 'Deposit tidak ditemukan.') }, { quoted: ctx.rawMessage });
     return;
@@ -155,15 +152,13 @@ export async function depositStatusCommand(ctx: CommandContext): Promise<void> {
 }
 
 export async function depositHistoryCommand(ctx: CommandContext): Promise<void> {
-  const sess = getSession(ctx.senderJid);
-  if (!sess) {
-    await ctx.sock.sendMessage(ctx.chatId, { text: '❌ Kamu belum terhubung ke bot ini.' }, { quoted: ctx.rawMessage });
-    return;
-  }
+  const guard = await assertSessionPhoneMatch(ctx);
+  if (!guard.valid) return;
+  const apiKey = guard.apiKey!;
 
   await ctx.sock.sendMessage(ctx.chatId, { text: loading('Mengambil riwayat deposit...') });
 
-  const res = await fetchApiDepositsHistory(sess.apiKey, { page: 1, limit: 10 });
+  const res = await fetchApiDepositsHistory(apiKey, { page: 1, limit: 10 });
   const rawData: any = res.data;
   const items: ApiDepositResult[] = Array.isArray(rawData) ? rawData : Array.isArray(rawData?.data) ? rawData.data : [];
 

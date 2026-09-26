@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { config } from '../config';
 import { logger } from '../lib/logger';
 import { getSocketInstance } from '../whatsapp/client';
-import { getInvoicePhone, getInvoiceTarget, removeInvoiceMapping } from '../storage/session';
+import { getInvoicePhone, getInvoiceTarget, removeInvoiceMapping, invalidatePhoneSession, invalidateSessionByUserId } from '../storage/session';
 import { formatRupiah } from '../lib/utils';
 
 export interface WebhookPayload {
@@ -103,6 +103,29 @@ export function createWebhookApp() {
 
     const event = payload.event || '';
     const data = payload.data || {};
+
+    if (event === 'auth.phone_changed') {
+      const { oldPhone, newPhone, userId } = data;
+      logger.info({ userId, oldPhone, newPhone }, 'Webhook auth.phone_changed: Menghapus session nomor lama');
+      if (oldPhone) {
+        invalidatePhoneSession(oldPhone);
+      }
+      return c.json({ success: true, message: 'Session bot nomor lama berhasil dibersihkan' });
+    }
+
+    if (event === 'auth.api_key_regenerated') {
+      const { oldPhone, phone, userId } = data;
+      const targetPhone = phone || oldPhone;
+      logger.info({ userId, phone: targetPhone }, 'Webhook auth.api_key_regenerated: Menghapus session bot');
+      if (targetPhone) {
+        invalidatePhoneSession(targetPhone);
+      }
+      if (userId) {
+        invalidateSessionByUserId(userId);
+      }
+      return c.json({ success: true, message: 'Session bot berhasil dibersihkan karena API key akun di-regenerate' });
+    }
+
     const message = mapEventToMessage(event, data);
 
     logger.info({ event, eventId: payload.eventId }, 'Webhook diterima');

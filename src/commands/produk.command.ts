@@ -1,21 +1,17 @@
 import { CommandContext } from '../types/command.types';
 import { fetchApiProducts, ApiProduct } from '../api/products/products.api';
-import { getSession } from '../storage/session';
+import { assertSessionPhoneMatch } from '../lib/sessionGuard';
 import { formatRupiah } from '../lib/utils';
 import { loading, error } from '../lib/formatter';
 import { logger } from '../lib/logger';
 import { BRAND_ALIASES } from '../config/brandCodes';
 
 export async function produkCommand(ctx: CommandContext): Promise<void> {
-  const sess = getSession(ctx.senderJid);
-  if (!sess) {
-    await ctx.sock.sendMessage(
-      ctx.chatId,
-      { text: '❌ Kamu belum terhubung ke bot ini.\n\nSilakan tautkan akun:\nlogin <API_KEY>' },
-      { quoted: ctx.rawMessage }
-    );
+  const guard = await assertSessionPhoneMatch(ctx);
+  if (!guard.valid || !guard.apiKey) {
     return;
   }
+  const apiKey = guard.apiKey;
 
   await ctx.sock.sendMessage(ctx.chatId, { text: loading('Mengambil daftar produk...') });
 
@@ -23,7 +19,7 @@ export async function produkCommand(ctx: CommandContext): Promise<void> {
 
   // ===== case A: produk / harga tanpa argumen → tampilkan daftar kode dikelompokkan per brandCategory =====
   if (!code) {
-    const res = await fetchApiProducts(sess.apiKey);
+    const res = await fetchApiProducts(apiKey);
     const brandMeta = new Map<string, { brandName?: string; brandCategory?: string }>();
 
     if (res.success && res.data) {
@@ -85,7 +81,7 @@ export async function produkCommand(ctx: CommandContext): Promise<void> {
   const targetSelector = BRAND_ALIASES[code] || code;
   const [slugTarget, regionTarget] = targetSelector.split('|');
 
-  const res = await fetchApiProducts(sess.apiKey, { search: slugTarget });
+  const res = await fetchApiProducts(apiKey, { search: slugTarget });
   if (!res.success || !res.data) {
     logger.warn({ error: res.error, code }, 'Produk per kode gagal diambil dari V1 API');
     await ctx.sock.sendMessage(ctx.chatId, { text: error(res.error || 'Gagal mengambil produk.') }, { quoted: ctx.rawMessage });

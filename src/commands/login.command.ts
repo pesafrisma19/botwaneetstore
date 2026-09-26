@@ -90,6 +90,7 @@ export async function loginCommand(ctx: CommandContext): Promise<void> {
   }
 
   const saved = setSession(ctx.senderJid, {
+    userId: profile.id,
     apiKey,
     updated_at: new Date().toISOString(),
   });

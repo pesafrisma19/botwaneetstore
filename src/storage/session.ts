@@ -5,6 +5,7 @@ import { logger } from '../lib/logger';
 import { normalizePhone } from '../lib/utils';
 
 export interface SessionData {
+  userId?: number;
   apiKey: string;
   updated_at: string;
 }
@@ -137,6 +138,81 @@ export function removeSession(senderJid: string): void {
     saveFile(SESSION_FILE, memSessions);
     logger.info({ phone }, 'Session dihapus');
   }
+}
+
+/**
+ * Invalidate session nomor lama secara tuntas (Canonical & Variants & LID reverse mapping).
+ * Menghapus session dari memSessions dan LID mapping dari lidMap, lalu menyimpan ke file JSON.
+ */
+export function invalidatePhoneSession(phoneInput: string): boolean {
+  if (!phoneInput) return false;
+  const normalized = normalizePhone(phoneInput);
+  if (!normalized) return false;
+
+  const targetVariants = new Set<string>();
+  targetVariants.add(normalized);
+  targetVariants.add('+' + normalized);
+  if (normalized.startsWith('62')) {
+    targetVariants.add('0' + normalized.slice(2));
+    targetVariants.add(normalized.slice(2));
+  }
+  const jidTarget = normalized + '@s.whatsapp.net';
+  targetVariants.add(jidTarget);
+
+  let sessionChanged = false;
+  // 1. Delete from memSessions by matching key or normalized key
+  for (const key of Object.keys(memSessions)) {
+    const normKey = normalizePhone(key);
+    if (targetVariants.has(key) || (normKey && normKey === normalized)) {
+      delete memSessions[key];
+      sessionChanged = true;
+      logger.info({ key, normalized }, 'Session bot dihapus karena nomor berubah');
+    }
+  }
+
+  // 2. Delete from lidMap reverse lookup where value matches normalized
+  let lidChanged = false;
+  for (const [lidKey, mappedPhone] of Object.entries(lidMap)) {
+    const normMapped = normalizePhone(mappedPhone);
+    if (targetVariants.has(mappedPhone) || (normMapped && normMapped === normalized)) {
+      if (memSessions[lidKey]) {
+        delete memSessions[lidKey];
+        sessionChanged = true;
+      }
+      delete lidMap[lidKey];
+      lidChanged = true;
+      logger.info({ lidKey, mappedPhone }, 'LID mapping dihapus karena nomor berubah');
+    }
+  }
+
+  if (sessionChanged) {
+    saveFile(SESSION_FILE, memSessions);
+  }
+  if (lidChanged) {
+    saveFile(LID_FILE, lidMap);
+  }
+
+  return sessionChanged || lidChanged;
+}
+
+/**
+ * Invalidate session berdasarkan userId.
+ * Menghapus session dari memSessions jika session.userId cocok, lalu menyimpannya ke disk.
+ */
+export function invalidateSessionByUserId(userId: number): boolean {
+  if (!userId) return false;
+  let sessionChanged = false;
+  for (const [key, session] of Object.entries(memSessions)) {
+    if (session && (session as any).userId === userId) {
+      delete memSessions[key];
+      sessionChanged = true;
+      logger.info({ key, userId }, 'Session bot dihapus karena API key akun di-regenerate');
+    }
+  }
+  if (sessionChanged) {
+    saveFile(SESSION_FILE, memSessions);
+  }
+  return sessionChanged;
 }
 
 export function hasSession(senderJid: string): boolean {

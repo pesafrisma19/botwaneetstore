@@ -1,34 +1,13 @@
 import { CommandContext } from '../types/command.types';
-import { fetchApiProfile } from '../api/profile/profile.api';
-import { getSession } from '../storage/session';
+import { assertSessionPhoneMatch } from '../lib/sessionGuard';
 import { formatRupiah } from '../lib/utils';
-import { infoBox, loading, error } from '../lib/formatter';
-import { logger } from '../lib/logger';
+import { infoBox } from '../lib/formatter';
 
 export async function profilCommand(ctx: CommandContext): Promise<void> {
-  const sess = getSession(ctx.senderJid);
-  if (!sess) {
-    await ctx.sock.sendMessage(
-      ctx.chatId,
-      {
-        text: '❌ Kamu belum terhubung ke bot ini.\n\nSilakan tautkan akun:\nlogin <API_KEY>',
-      },
-      { quoted: ctx.rawMessage }
-    );
-    return;
-  }
+  const guard = await assertSessionPhoneMatch(ctx);
+  if (!guard.valid) return;
 
-  await ctx.sock.sendMessage(ctx.chatId, { text: loading('Mengambil data akun...') });
-
-  const res = await fetchApiProfile(sess.apiKey);
-
-  if (!res.success || !res.data) {
-    logger.warn({ error: res.error }, 'Profil gagal diambil');
-    await ctx.sock.sendMessage(ctx.chatId, { text: error(res.error || 'Gagal mengambil profil.') }, { quoted: ctx.rawMessage });
-    return;
-  }
-
-  const p = res.data;
+  const p = guard.profile;
   const isSaldo = ctx.commandName === 'saldo' || ctx.commandName === 'ceksaldo' || ctx.commandName === 'balance';
   const displayName = p.fullname || p.username;
 

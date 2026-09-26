@@ -1,7 +1,7 @@
 import { CommandContext } from '../types/command.types';
 import { fetchApiProducts } from '../api/products/products.api';
 import { validateAccount } from '../api/validation/validation.api';
-import { getSession } from '../storage/session';
+import { assertSessionPhoneMatch } from '../lib/sessionGuard';
 import { loading, error } from '../lib/formatter';
 import { logger } from '../lib/logger';
 import { config } from '../config';
@@ -171,15 +171,11 @@ function formatCountryDisplay(regionCode?: string, fallbackCountry?: string): st
 }
 
 export async function handleGameValidation(ctx: CommandContext, def: GameValidatorDef): Promise<void> {
-  const sess = getSession(ctx.senderJid);
-  if (!sess) {
-    await ctx.sock.sendMessage(
-      ctx.chatId,
-      { text: '❌ Kamu belum terhubung ke bot ini.\n\nSilakan tautkan akun:\nlogin <API_KEY>' },
-      { quoted: ctx.rawMessage }
-    );
+  const guard = await assertSessionPhoneMatch(ctx);
+  if (!guard.valid || !guard.apiKey) {
     return;
   }
+  const apiKey = guard.apiKey;
 
   let targetAccount = ctx.args[0] || '';
   let targetZone = ctx.args[1] || '';
@@ -205,7 +201,7 @@ export async function handleGameValidation(ctx: CommandContext, def: GameValidat
   await ctx.sock.sendMessage(ctx.chatId, { text: loading(`Mengecek akun...`) });
 
   // Cari produk game terkait untuk memenuhi kontrak productId API
-  const prodRes = await fetchApiProducts(sess.apiKey, { search: def.brandSlug });
+  const prodRes = await fetchApiProducts(apiKey, { search: def.brandSlug });
   const product = prodRes.data?.find(
     (p) => p.brandSlug === def.brandSlug || p.brand?.toLowerCase().includes(def.name.toLowerCase())
   );
@@ -219,7 +215,7 @@ export async function handleGameValidation(ctx: CommandContext, def: GameValidat
     return;
   }
 
-  const res = await validateAccount(sess.apiKey, {
+  const res = await validateAccount(apiKey, {
     productId: product.productId,
     brandId: product.brandId ? Number(product.brandId) : undefined,
     targetAccount,
